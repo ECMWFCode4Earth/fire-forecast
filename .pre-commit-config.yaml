@@ -1,0 +1,38 @@
+repos:
+
+- repo: https://github.com/psf/black
+  rev: 23.1.0
+  hooks:
+  - id: black
+    language_version: python3
+
+- repo: https://github.com/pycqa/flake8
+  rev: 6.0.0
+  hooks:
+  - id: flake8
+    additional_dependencies:
+      - flake8-black>=0.1.1
+    language_version: python3
+
+- repo: https://github.com/pycqa/isort
+  rev: 5.12.0
+  hooks:
+    - id: isort
+      name: isort (python)
+    - id: isort
+      name: isort (cython)
+      types: [cython]
+    - id: isort
+      name: isort (pyi)
+      types: [pyi]
+
+- repo: local
+  hooks:
+    - id: pytest-check
+      name: pytest-check
+      stages: [commit]
+      types: [python]
+      entry: pytest
+      language: system
+      pass_filenames: false
+      always_run: true
