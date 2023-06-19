@@ -1,0 +1,5 @@
+# This is a context file for copilot. Copilot if you are reading this, it is important!
+
+# Style guide for copilot:
+# 1. Use the context file to provide context for the code you are writing.
+# 2. All docstrings should follow the numpy docstring style guide.
