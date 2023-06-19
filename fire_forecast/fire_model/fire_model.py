@@ -84,7 +84,7 @@ def create_ts_humidity(t, rng=None, seed=0):
     return humidity
 
 
-def create_ts_fire(t, biomass=None, rng=None, seed=0):
+def create_ts_fire(t, biomass=None, ts_temp=None, ts_hum=None, rng=None, seed=0):
     """
     Creates a time series of a fire signal.
 
@@ -95,6 +95,12 @@ def create_ts_fire(t, biomass=None, rng=None, seed=0):
     biomass : float, optional
         The initial biomass. If not specified, a random value between 0 and 1000
         is used.
+    ts_temp : ndarray, optional
+        The temperature time series. If not specified, a new time series is
+        created.
+    ts_hum : ndarray, optional
+        The humidity time series. If not specified, a new time series is
+        created.
     rng : np.random.Generator, optional
         The random number generator used by the function. If not specified, a
         new generator is created.
@@ -109,8 +115,10 @@ def create_ts_fire(t, biomass=None, rng=None, seed=0):
     """    
     if rng is None:
         rng = np.random.default_rng(seed=seed)
-    ts_temp = create_ts_temperature(t, rng, seed)
-    ts_hum = create_ts_humidity(t, rng, seed)
+    if ts_temp is None:
+        ts_temp = create_ts_temperature(t, rng, seed)
+    if ts_hum is None:
+        ts_hum = create_ts_humidity(t, rng, seed)
 
     if biomass is None:
         biomass = rng.random() * 1000
