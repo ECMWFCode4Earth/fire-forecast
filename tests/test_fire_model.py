@@ -1,7 +1,7 @@
 import numpy as np
 
 
-from fire_forecast.fire_model import fire_model as fm 
+from fire_forecast import fire_model as fm 
 
 
 
@@ -16,5 +16,5 @@ def test():
     for i in range(n_tests):
         fm.create_ts_temperature(t, rng, seed=i)
         fm.create_ts_humidity(t, rng, seed=i)
-        fm.create_fire_time_series(t, rng=rng, seed=i)
-        fm.create_fire_time_series(t, rng=rng, seed=i, biomass=100)
+        fm.create_ts_fire(t, rng=rng, seed=i)
+        fm.create_ts_fire(t, rng=rng, seed=i, biomass=100)

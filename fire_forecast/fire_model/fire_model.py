@@ -84,7 +84,7 @@ def create_ts_humidity(t, rng=None, seed=0):
     return humidity
 
 
-def create_fire_time_series(t, biomass=None, rng=None, seed=0):
+def create_ts_fire(t, biomass=None, rng=None, seed=0):
     """
     Creates a time series of a fire signal.
 
