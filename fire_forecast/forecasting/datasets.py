@@ -143,7 +143,7 @@ class DataLoader:
         min = np.min([feat_min, targ_min])
         max = np.max([feat_max, targ_max])
 
-        timestep = np.arange(0, max - min + 1)
+        timestep = np.arange(0, max - min)
 
         # Number of samples
         time = self.ds["time"].values
