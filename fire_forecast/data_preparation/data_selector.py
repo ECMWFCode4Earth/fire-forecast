@@ -187,22 +187,22 @@ class DataSelector:
         the data boundaries"""
         sample_coordinates = sample_coordinates.where(
             (
-                sample_coordinates.latitude.isel(latitude_pixel=0)
+                sample_coordinates.latitude.min("latitude_pixel")
                 >= self.data.latitude.min()
             )
             & (
-                sample_coordinates.latitude.isel(latitude_pixel=-1)
+                sample_coordinates.latitude.max("latitude_pixel")
                 <= self.data.latitude.max()
             )
             & (
-                sample_coordinates.longitude.isel(longitude_pixel=0)
+                sample_coordinates.longitude.min("longitude_pixel")
                 >= self.data.longitude.min()
             )
             & (
-                sample_coordinates.longitude.isel(longitude_pixel=-1)
+                sample_coordinates.longitude.max("longitude_pixel")
                 <= self.data.longitude.max()
             )
-            & (sample_coordinates.time.isel(time_index=-1) <= self.data.time.max()),
+            & (sample_coordinates.time.max("time_index") <= self.data.time.max()),
             drop=True,
         )
         return sample_coordinates
