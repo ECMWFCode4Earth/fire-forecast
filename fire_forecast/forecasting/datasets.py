@@ -4,7 +4,7 @@ import xarray as xr
 from fire_forecast import fire_model as fm
 
 
-class ToyLoader:
+class ToyDataset:
     def __init__(self, t: int, seed: int = 0) -> None:
         """
         Toy data loader for testing purposes.
@@ -74,3 +74,6 @@ class ToyLoader:
         )
 
         return ds
+    
+
+
