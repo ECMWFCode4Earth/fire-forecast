@@ -58,6 +58,57 @@ def days_with_enough_data(data_selector: DataSelector) -> xr.DataArray:
     return data_selector._locate_days_with_enough_data(1, 1)
 
 
+@pytest.fixture
+def sample_coordinates(
+    data_selector: DataSelector, days_with_enough_data: xr.DataArray
+) -> xr.Dataset:
+    return data_selector._select_sample_coordinates(days_with_enough_data)
+
+
+@pytest.fixture
+def filtered_data(
+    data_selector: DataSelector, sample_coordinates: xr.Dataset
+) -> xr.Dataset:
+    return data_selector.data.sel(
+        latitude=sample_coordinates.latitude,
+        longitude=sample_coordinates.longitude,
+        time=sample_coordinates.time,
+    )
+
+
+@pytest.fixture
+def sample_coordinates_numpy(
+    data_selector: DataSelector, days_with_enough_data: xr.DataArray
+) -> np.ndarray:
+    return data_selector._retrieve_coordinates_of_entries(days_with_enough_data)
+
+
+@pytest.fixture
+def unfiltered_sample_coordinates(
+    data_selector: DataSelector, sample_coordinates_numpy: np.ndarray
+) -> xr.Dataset:
+    return xr.Dataset(
+        data_vars=dict(
+            longitude=(
+                ["sample", "longitude_pixel"],
+                data_selector._expand_longitudes_to_windows(
+                    sample_coordinates_numpy[2]
+                ),
+            ),
+            latitude=(
+                ["sample", "latitude_pixel"],
+                data_selector._expand_latitudes_to_windows(sample_coordinates_numpy[1]),
+            ),
+            time=(
+                ["sample", "time_index"],
+                data_selector._expand_times_to_windows(
+                    sample_coordinates_numpy[0]
+                ).astype("datetime64[ns]"),
+            ),
+        ),
+    )
+
+
 def test_init(data):
     data_selector = DataSelector(data)
     assert data_selector.data.equals(data)
@@ -95,7 +146,64 @@ def test_select_data(data_selector: DataSelector):
     )
 
 
+def test_add_metadata(
+    data_selector: DataSelector,
+    filtered_data: xr.Dataset,
+    sample_coordinates: xr.Dataset,
+):
+    filtered_data_with_metadata = data_selector._add_metadata(
+        filtered_data, sample_coordinates
+    )
+    assert "longitude" in filtered_data_with_metadata.coords
+    assert "latitude" in filtered_data_with_metadata.coords
+    assert "time" in filtered_data_with_metadata.coords
+
+
+def test_retrieve_coordinates_of_entries(
+    data_selector: DataSelector, days_with_enough_data: xr.DataArray
+):
+    sample_coordinates_numpy = data_selector._retrieve_coordinates_of_entries(
+        days_with_enough_data
+    )
+    assert isinstance(sample_coordinates_numpy, np.ndarray)
+    assert sample_coordinates_numpy.shape[0] == 3
+
+
 # TODO tests for
 # _expand_latitudes_to_windows,
-# _expand_longitudes_to_windows,
-# _expand_times_to_windows
+def test_expand_latitudes_to_windows(
+    data_selector: DataSelector, sample_coordinates_numpy
+):
+    latitudes = data_selector._expand_latitudes_to_windows(sample_coordinates_numpy[1])
+    assert latitudes.shape[-1] == data_selector._latitude_window_size
+
+
+def test_expand_longitudes_to_windows(
+    data_selector: DataSelector, sample_coordinates_numpy
+):
+    longitudes = data_selector._expand_longitudes_to_windows(
+        sample_coordinates_numpy[2]
+    )
+    assert longitudes.shape[-1] == data_selector._longitude_window_size
+
+
+def test_expand_times_to_windows(data_selector: DataSelector, sample_coordinates_numpy):
+    times = data_selector._expand_times_to_windows(sample_coordinates_numpy[0])
+    assert (
+        times.shape[-1] == 2
+    )  # since the test data has only dayly resolution not hourly
+
+
+def test_filter_boundary(
+    data_selector: DataSelector, unfiltered_sample_coordinates: xr.Dataset
+):
+    n_samples_unfiltered = len(unfiltered_sample_coordinates.sample)
+    filtered_coordinates = data_selector._filter_boundary(unfiltered_sample_coordinates)
+    n_samples_filtered = len(filtered_coordinates.sample)
+    assert n_samples_unfiltered > n_samples_filtered
+    assert data_selector.data.longitude.min() <= filtered_coordinates.longitude.min()
+    assert data_selector.data.longitude.max() >= filtered_coordinates.longitude.max()
+    assert data_selector.data.latitude.min() <= filtered_coordinates.latitude.min()
+    assert data_selector.data.latitude.max() >= filtered_coordinates.latitude.max()
+    assert data_selector.data.time.min() <= filtered_coordinates.time.min()
+    assert data_selector.data.time.max() >= filtered_coordinates.time.max()

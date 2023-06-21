@@ -57,11 +57,30 @@ class DataSelector:
             fire_threshold, measurement_threshold
         )
         sample_coordinates = self._select_sample_coordinates(days_with_enough_data)
-        return self.data.sel(
+        filtered_data = self.data.sel(
             latitude=sample_coordinates.latitude,
             longitude=sample_coordinates.longitude,
             time=sample_coordinates.time,
         )
+        filtered_data = self._add_metadata(filtered_data, sample_coordinates)
+        return filtered_data
+
+    def _add_metadata(self, filtered_data: xr.Dataset, sample_coordinates: xr.Dataset):
+        """Adds metadata to the filtered data.
+
+        Args:
+            filtered_data (xr.Dataset): The filtered data.
+            sample_coordinates (xr.Dataset): The sample coordinates.
+
+        Returns:
+            xr.Dataset: The filtered data with metadata.
+        """
+        filtered_data = filtered_data.assign_coords(
+            latitude=sample_coordinates.latitude,
+            longitude=sample_coordinates.longitude,
+            time=sample_coordinates.time,
+        )
+        return filtered_data
 
     def _locate_days_with_enough_data(
         self, fire_threshold: int, measurement_threshold: int
@@ -107,22 +126,10 @@ class DataSelector:
         Returns:
             xr.DataArray: The coordinates of the data that fulfills the requirements.
         """
-        sample_coordinates = []
 
-        for day_of_year in tqdm(days_with_enough_data.dayofyear.values):
-            data_of_day = days_with_enough_data.sel(dayofyear=day_of_year)
-            if data_of_day.sum() == 0:
-                continue
-            data_of_day = data_of_day.where(data_of_day, drop=True)
-            for latitude in data_of_day.latitude.values:
-                for longitude in data_of_day.longitude.values:
-                    if np.isnan(
-                        data_of_day.sel(latitude=latitude, longitude=longitude).item()
-                    ):
-                        continue
-                    sample_coordinates.append((day_of_year, latitude, longitude))
-
-        sample_coordinates_numpy = np.array(sample_coordinates).T
+        sample_coordinates_numpy = self._retrieve_coordinates_of_entries(
+            days_with_enough_data
+        )
         sample_coordinates_dataset = xr.Dataset(
             data_vars=dict(
                 longitude=(
@@ -142,6 +149,25 @@ class DataSelector:
             ),
         )
         return self._filter_boundary(sample_coordinates_dataset)
+
+    def _retrieve_coordinates_of_entries(
+        self, days_with_enough_data: xr.DataArray
+    ) -> np.ndarray:
+        sample_coordinates = []
+
+        for day_of_year in tqdm(days_with_enough_data.dayofyear.values):
+            data_of_day = days_with_enough_data.sel(dayofyear=day_of_year)
+            if data_of_day.sum() == 0:
+                continue
+            data_of_day = data_of_day.where(data_of_day, drop=True)
+            for latitude in data_of_day.latitude.values:
+                for longitude in data_of_day.longitude.values:
+                    if np.isnan(
+                        data_of_day.sel(latitude=latitude, longitude=longitude).item()
+                    ):
+                        continue
+                    sample_coordinates.append((day_of_year, latitude, longitude))
+        return np.array(sample_coordinates).T
 
     def _expand_latitudes_to_windows(self, latitudes: np.ndarray) -> np.ndarray:
         """Expands the latitude array to include the window size"""
