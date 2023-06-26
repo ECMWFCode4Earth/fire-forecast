@@ -1,9 +1,11 @@
 """
 Supply a fire model that creates fire time series data. 
 
-The idea is that the forecasting algorithms can be trained on the synthetic.
+The idea is that the forecasting algorithms can be trained on the synthetic data.
 """
 
+# Constants for the fire model
+AMPLITUDE_DIURNAL_CYCLE = 5
 import numpy as np
 import xarray as xr
 
@@ -34,7 +36,7 @@ def create_ts_temperature(t, rng=None, seed=0):
         rng = np.random.default_rng(seed=seed)
     # Create the diurnal cycle
     t_diurnal_cycle = 24
-    diurnal_cycle = 5 * np.sin(np.arange(t) * 2 * np.pi / t_diurnal_cycle)
+    diurnal_cycle = AMPLITUDE_DIURNAL_CYCLE * np.sin(np.arange(t) * 2 * np.pi / t_diurnal_cycle)
     # Create the random trend
     offset = rng.random() * 10
     trend = np.linspace(offset, offset + rng.random() * 10, t)
