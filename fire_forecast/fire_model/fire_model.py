@@ -6,8 +6,20 @@ The idea is that the forecasting algorithms can be trained on the synthetic data
 
 # Constants for the fire model
 AMPLITUDE_DIURNAL_CYCLE = 5
+OFFSET = {"temperature": 10, "humidity": 30}
+TREND = {"temperature": 10, "humidity": 10}
+NOISE_STD = {"temperature": 2, "humidity": 2, "fire": 0.5}
+BASELINE = {"temperature": 0, "humidity": 10}
+BIOMASS = 1000
+FIRE_SCALE = 1 / 150
+FIRE_HUMIDITY_IMPACT = 0.4
+FIRE_FORCING = 0.6
+FIRE_CUTOFF = 0.01
+
+
 import numpy as np
 import xarray as xr
+
 
 def create_ts_temperature(t, rng=None, seed=0):
     """
@@ -36,15 +48,18 @@ def create_ts_temperature(t, rng=None, seed=0):
         rng = np.random.default_rng(seed=seed)
     # Create the diurnal cycle
     t_diurnal_cycle = 24
-    diurnal_cycle = AMPLITUDE_DIURNAL_CYCLE * np.sin(np.arange(t) * 2 * np.pi / t_diurnal_cycle)
+    diurnal_cycle = AMPLITUDE_DIURNAL_CYCLE * np.sin(
+        np.arange(t) * 2 * np.pi / t_diurnal_cycle
+    )
     # Create the random trend
-    offset = rng.random() * 10
-    trend = np.linspace(offset, offset + rng.random() * 10, t)
+    offset = rng.random() * OFFSET["temperature"]
+    trend = np.linspace(offset, offset + rng.random() * TREND["temperature"], t)
     # Create the noise
-    noise = rng.normal(0, 2, t)
+    noise = rng.normal(0, NOISE_STD["temperature"], t)
     # Combine the components
-    temperature = diurnal_cycle + trend + noise
+    temperature = diurnal_cycle + trend + noise + BASELINE["temperature"]
     return temperature
+
 
 def create_ts_humidity(t, rng=None, seed=0):
     """
@@ -73,14 +88,16 @@ def create_ts_humidity(t, rng=None, seed=0):
         rng = np.random.default_rng(seed=seed)
     # Create the diurnal cycle
     t_diurnal_cycle = 24
-    diurnal_cycle = 5 * np.sin(np.arange(t) * 2 * np.pi / t_diurnal_cycle)
+    diurnal_cycle = AMPLITUDE_DIURNAL_CYCLE * np.sin(
+        np.arange(t) * 2 * np.pi / t_diurnal_cycle
+    )
     # Create the random trend
-    offset = rng.random() * 30
-    trend = np.linspace(offset, offset + rng.random() * 10, t)
+    offset = rng.random() * OFFSET["humidity"]
+    trend = np.linspace(offset, offset + rng.random() * TREND["humidity"], t)
     # Create the noise
-    noise = rng.normal(0, 2, t)
+    noise = rng.normal(0, NOISE_STD["humidity"], t)
     # Combine the components
-    humidity = diurnal_cycle + trend + noise + 10
+    humidity = diurnal_cycle + trend + noise + BASELINE["humidity"]
     # Limit to humidity between 0 and 100
     humidity = np.clip(humidity, 1, 100)
     return humidity
@@ -114,7 +131,7 @@ def create_ts_fire(t, biomass=None, ts_temp=None, ts_hum=None, rng=None, seed=0)
     -------
     fire : ndarray
         The time series of the fire signal
-    """    
+    """
     if rng is None:
         rng = np.random.default_rng(seed=seed)
     if ts_temp is None:
@@ -123,16 +140,16 @@ def create_ts_fire(t, biomass=None, ts_temp=None, ts_hum=None, rng=None, seed=0)
         ts_hum = create_ts_humidity(t, rng, seed)
 
     if biomass is None:
-        biomass = rng.random() * 1000
+        biomass = rng.random() * BIOMASS
     # Create the fire time series
     ts_fire = np.zeros(t)
     for i in range(1, t):
-        df = biomass * ts_temp[i] / 150 * (0.4 - ts_hum[i] / 100) - 0.6
+        df = biomass * ts_temp[i] * FIRE_SCALE * (FIRE_HUMIDITY_IMPACT - ts_hum[i] / 100) - FIRE_FORCING
         # Add a random component
-        df *= rng.normal(1., 0.5)
+        df *= rng.normal(1.0, NOISE_STD["fire"])
         ts_fire[i] = ts_fire[i - 1] + df
         biomass -= ts_fire[i]
-        if ts_fire[i] < 0.01:
+        if ts_fire[i] < FIRE_CUTOFF:
             ts_fire[i] = 0
             break
     return ts_fire
