@@ -40,6 +40,21 @@ class DataSelector:
     def data(self) -> xr.Dataset:
         return self._data
 
+    def select_data_with_shift(
+        self, shift=int, fire_threshold: int = 1, measurement_threshold: int = 1
+    ):
+        original_times = self.data.time.values
+        shifted_times = original_times + self._time_grid_size * shift
+        self._data = self.data.assign_coords(time=shifted_times)
+
+        selected_data = self.select_data(fire_threshold, measurement_threshold)
+
+        self._data = self.data.assign_coords(time=original_times)
+        selected_data = selected_data.assign_coords(
+            time=selected_data.time - self._time_grid_size * shift
+        )
+        return selected_data
+
     def select_data(self, fire_threshold: int = 1, measurement_threshold: int = 1):
         """Selects pixels that have enough fire values on one day and enough
             measurements on the following day.
@@ -62,15 +77,25 @@ class DataSelector:
             longitude=sample_coordinates.longitude,
             time=sample_coordinates.time,
         )
-        filtered_data = self._add_metadata(filtered_data, sample_coordinates)
+        filtered_data = self._add_metadata(
+            filtered_data, sample_coordinates, fire_threshold, measurement_threshold
+        )
         return filtered_data
 
-    def _add_metadata(self, filtered_data: xr.Dataset, sample_coordinates: xr.Dataset):
+    def _add_metadata(
+        self,
+        filtered_data: xr.Dataset,
+        sample_coordinates: xr.Dataset,
+        fire_threshold: int,
+        measurement_threshold: int,
+    ):
         """Adds metadata to the filtered data.
 
         Args:
             filtered_data (xr.Dataset): The filtered data.
             sample_coordinates (xr.Dataset): The sample coordinates.
+            fire_threshold (int): The minimum number of fire pixels in a window.
+            measurement_threshold (int): The minimum number of measurements in a window.
 
         Returns:
             xr.Dataset: The filtered data with metadata.
@@ -79,6 +104,12 @@ class DataSelector:
             latitude=sample_coordinates.latitude,
             longitude=sample_coordinates.longitude,
             time=sample_coordinates.time,
+        )
+        filtered_data = filtered_data.assign_attrs(
+            dict(
+                fire_threshold=fire_threshold,
+                measurement_threshold=measurement_threshold,
+            )
         )
         return filtered_data
 
@@ -228,6 +259,7 @@ class DataSelector:
                 sample_coordinates.longitude.max("longitude_pixel")
                 <= self.data.longitude.max()
             )
+            & (sample_coordinates.time.min("time_index") >= self.data.time.min())
             & (sample_coordinates.time.max("time_index") <= self.data.time.max()),
             drop=True,
         )

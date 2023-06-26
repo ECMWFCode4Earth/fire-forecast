@@ -49,8 +49,34 @@ def data():
 
 
 @pytest.fixture
-def data_selector(data) -> DataSelector:
-    return DataSelector(data)
+def hourly_data():
+    sample_data = xr.Dataset(
+        data_vars=dict(
+            total_frpfire=(["time", "latitude", "longitude"], np.ones((72, 4, 4))),
+            total_offire=(["time", "latitude", "longitude"], np.ones((72, 4, 4))),
+            total_temperature=(
+                ["time", "latitude", "longitude"],
+                np.random.rand(72, 4, 4),
+            ),
+        ),
+        coords=dict(
+            longitude=(["longitude"], np.arange(0, 2, 0.5)),
+            latitude=(["latitude"], np.arange(5, 7, 0.5)),
+            time=(
+                ["time"],
+                np.arange(
+                    "2020-01-01T00:00:00", "2020-01-04T00:00:00", dtype="datetime64[h]"
+                ).astype("datetime64[ns]"),
+            ),
+        ),
+    )
+    return sample_data
+
+
+# DataSelector fixture with both daily and hourly data
+@pytest.fixture(params=["data", "hourly_data"])
+def data_selector(request):
+    return DataSelector(request.getfixturevalue(request.param))
 
 
 @pytest.fixture
@@ -146,17 +172,22 @@ def test_select_data(data_selector: DataSelector):
     )
 
 
+# def test_select_data_hourly(data_selector: DataSelector)
+
+
 def test_add_metadata(
     data_selector: DataSelector,
     filtered_data: xr.Dataset,
     sample_coordinates: xr.Dataset,
 ):
     filtered_data_with_metadata = data_selector._add_metadata(
-        filtered_data, sample_coordinates
+        filtered_data, sample_coordinates, 1, 1
     )
     assert "longitude" in filtered_data_with_metadata.coords
     assert "latitude" in filtered_data_with_metadata.coords
     assert "time" in filtered_data_with_metadata.coords
+    assert "fire_threshold" in filtered_data_with_metadata.attrs
+    assert "measurement_threshold" in filtered_data_with_metadata.attrs
 
 
 def test_retrieve_coordinates_of_entries(
@@ -190,7 +221,7 @@ def test_expand_longitudes_to_windows(
 def test_expand_times_to_windows(data_selector: DataSelector, sample_coordinates_numpy):
     times = data_selector._expand_times_to_windows(sample_coordinates_numpy[0])
     assert (
-        times.shape[-1] == 2
+        times.shape[-1] == np.timedelta64(2, "D") / data_selector._time_grid_size
     )  # since the test data has only dayly resolution not hourly
 
 
@@ -207,3 +238,20 @@ def test_filter_boundary(
     assert data_selector.data.latitude.max() >= filtered_coordinates.latitude.max()
     assert data_selector.data.time.min() <= filtered_coordinates.time.min()
     assert data_selector.data.time.max() >= filtered_coordinates.time.max()
+
+
+@pytest.mark.parametrize("shift", [1, 2, 3])
+def test_select_data_with_shift(data_selector: DataSelector, shift):
+    selected_data_with_shift = data_selector.select_data_with_shift(
+        shift=shift, fire_threshold=1, measurement_threshold=1
+    )
+    assert set(["sample", "latitude_pixel", "longitude_pixel", "time_index"]) == set(
+        selected_data_with_shift.dims
+    )
+    if data_selector._time_grid_size == np.timedelta64(1, "h"):
+        assert (
+            selected_data_with_shift.time.min()
+            == data_selector.data.time.min()
+            + np.timedelta64(1, "D")
+            - shift * np.timedelta64(1, "h")
+        )
