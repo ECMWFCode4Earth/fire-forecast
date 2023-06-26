@@ -1,9 +1,7 @@
 import numpy as np
 
 
-from fire_forecast import fire_model as fm 
-
-
+from fire_forecast import fire_model as fm
 
 
 def test():
@@ -11,17 +9,40 @@ def test():
     Test that the fire time series is created correctly.
     """
     n_tests = 100
-    t = 1000
+    timeseries_length = 1000
     rng = np.random.default_rng(seed=0)
     for i in range(n_tests):
-        ts_temp =fm.create_ts_temperature(t, rng, seed=i)
-        ts_hum = fm.create_ts_humidity(t, rng, seed=i)
-        fm.create_ts_fire(t, rng=rng, seed=i)
-        fm.create_ts_fire(t, rng=rng, seed=i, biomass=100)
-        fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_temp=ts_temp)
-        fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_hum=ts_hum)
-        ts_fire = fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_temp=ts_temp, ts_hum=ts_hum)
+        temperature_timeseries = fm.create_temperature_timeseries(
+            timeseries_length, rng, seed=i
+        )
+        humidity_timeseries = fm.create_humidity_timeseries(
+            timeseries_length, rng, seed=i
+        )
+        fm.create_timeseries_fire(timeseries_length, rng=rng, seed=i)
+        fm.create_timeseries_fire(timeseries_length, rng=rng, seed=i, biomass=100)
+        fm.create_timeseries_fire(
+            timeseries_length,
+            rng=rng,
+            seed=i,
+            biomass=100,
+            temperature_timeseries=temperature_timeseries,
+        )
+        fm.create_timeseries_fire(
+            timeseries_length,
+            rng=rng,
+            seed=i,
+            biomass=100,
+            temperature_timeseries=temperature_timeseries,
+        )
+        fire_timeseries = fm.create_timeseries_fire(
+            timeseries_length,
+            rng=rng,
+            seed=i,
+            biomass=100,
+            temperature_timeseries=temperature_timeseries,
+            humidity_timeseries=humidity_timeseries,
+        )
 
-        assert ts_temp.shape == (t,)
-        assert ts_hum.shape == (t,)
-        assert ts_fire.shape == (t,)
+        assert temperature_timeseries.shape == (timeseries_length,)
+        assert temperature_timeseries.shape == (timeseries_length,)
+        assert fire_timeseries.shape == (timeseries_length,)
