@@ -281,5 +281,5 @@ class DataLoader:
         ds.coords["n_y"] = multiindex
 
         # Stack m and n dimensions
-        ds = ds.stack(sample=("n", "m"))
+        ds = ds.stack(sample=("m", "n"))
         return ds

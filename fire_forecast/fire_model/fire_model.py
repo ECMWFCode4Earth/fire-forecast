@@ -125,7 +125,7 @@ def create_ts_fire(t, biomass=None, ts_temp=None, ts_hum=None, rng=None, seed=0)
     # Create the fire time series
     ts_fire = np.zeros(t)
     for i in range(1, t):
-        df = biomass * ts_temp[i] / 150 * (0.4 - ts_hum[i] / 100) - 0.1
+        df = biomass * ts_temp[i] / 150 * (0.4 - ts_hum[i] / 100) - 0.6
         # Add a random component
         df *= rng.normal(1., 0.5)
         ts_fire[i] = ts_fire[i - 1] + df
