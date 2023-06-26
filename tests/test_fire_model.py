@@ -20,4 +20,8 @@ def test():
         fm.create_ts_fire(t, rng=rng, seed=i, biomass=100)
         fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_temp=ts_temp)
         fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_hum=ts_hum)
-        fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_temp=ts_temp, ts_hum=ts_hum)
+        ts_fire = fm.create_ts_fire(t, rng=rng, seed=i, biomass=100, ts_temp=ts_temp, ts_hum=ts_hum)
+
+        assert ts_temp.shape == (t,)
+        assert ts_hum.shape == (t,)
+        assert ts_fire.shape == (t,)
