@@ -42,7 +42,23 @@ class DataSelector:
 
     def select_data_with_shift(
         self, shift=int, fire_threshold: int = 1, measurement_threshold: int = 1
-    ):
+    ) -> xr.Dataset:
+        """Selects pixels that have enough fire values on one day and enough
+            measurements on the following day. The data is shifted by the
+            specified amount of hours A shift value of 1 will correspond to
+            the time frame from 23:00 on one day until 22:00 on the following.
+
+        Args:
+            shift (int): The amount of hours to shift the data.
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.Dataset: The selected data.
+        """
+
         original_times = self.data.time.values
         shifted_times = original_times + self._time_grid_size * shift
         self._data = self.data.assign_coords(time=shifted_times)
@@ -184,6 +200,15 @@ class DataSelector:
     def _retrieve_coordinates_of_entries(
         self, days_with_enough_data: xr.DataArray
     ) -> np.ndarray:
+        """Retrieves the coordinates of the data that fulfills the requirements.
+
+        Args:
+            days_with_enough_data (xr.DataArray): A boolean array indicating
+                whether a day has enough data.
+
+        Returns:
+            np.ndarray: The coordinates of the data that fulfills the requirements.
+        """
         sample_coordinates = []
 
         for day_of_year in tqdm(days_with_enough_data.dayofyear.values):
