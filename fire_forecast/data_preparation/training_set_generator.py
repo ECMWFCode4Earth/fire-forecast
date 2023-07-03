@@ -47,6 +47,23 @@ class TrainingSetGenerator:
                 > 0,
                 drop=True,
             )
+            # filter out nan values
+            for data_var in satellite_dataset.data_vars:
+                data = satellite_dataset[data_var]
+                if "ident" in data.dims:
+                    satellite_dataset = satellite_dataset.where(
+                        (~np.isnan(data)).prod(
+                            ["longitude_pixel", "latitude_pixel", "time_index", "ident"]
+                        ),
+                        drop=True,
+                    )
+                else:
+                    satellite_dataset = satellite_dataset.where(
+                        (~np.isnan(data)).prod(
+                            ["longitude_pixel", "latitude_pixel", "time_index"]
+                        ),
+                        drop=True,
+                    )
 
             satellite_subsets.append(satellite_dataset)
         dataset = xr.concat(satellite_subsets, dim="sample")
