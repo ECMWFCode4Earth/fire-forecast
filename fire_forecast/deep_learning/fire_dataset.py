@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Union
+from typing import Tuple, Union
 
 import h5py
+import numpy as np
 from torch.utils.data import Dataset
 
 from fire_forecast.deep_learning.utils import (
@@ -11,7 +12,14 @@ from fire_forecast.deep_learning.utils import (
 
 
 class FireDataset(Dataset):
+    """Dataset for fire forecast data."""
+
     def __init__(self, data_path: Union[str, Path]) -> None:
+        """Initialize the dataset.
+
+        Args:
+            data_path (Union[str, Path]): Path to the data file.
+        """
         self._data_path = Path(data_path)
         (
             self.fire_features,
@@ -35,7 +43,13 @@ class FireDataset(Dataset):
     def output_size(self):
         return len(flatten_labels_and_weights(self.labels[0])[0])
 
-    def _read_data(self):
+    def _read_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Read the data from the file and splits it into fire features, meteo features,
+        labels and data variables.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: A tuple containing
+                the fire features, meteo features, labels and data variables."""
         with h5py.File(self._data_path, "r") as file:
             data = file["training_set"][:]
             data_variables = file["variable_selection"][:]

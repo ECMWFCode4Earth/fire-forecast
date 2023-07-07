@@ -6,6 +6,15 @@ import numpy as np
 def flatten_features(
     fire_features: np.ndarray, meteo_features: np.ndarray
 ) -> np.ndarray:
+    """Flatten the fire and meteo features into a single array for prediction by model.
+
+    Args:
+        fire_features (np.ndarray): Fire features.
+        meteo_features (np.ndarray): Meteo features.
+
+    Returns:
+        np.ndarray: Flattened and combined features.
+    """
     # for multiple data points
     if len(fire_features.shape) == 5:
         fire_features = fire_features.reshape(fire_features.shape[0], -1)
@@ -19,6 +28,14 @@ def flatten_features(
 
 
 def flatten_labels_and_weights(labels: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Flatten the labels and weights into a single array for prediction by model.
+
+    Args:
+        labels (np.ndarray): Labels and weights.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Flattened labels and weights.
+    """
     # for multiple data points
     if len(labels.shape) == 3:
         target_values = labels[:, 0].reshape(labels.shape[0], -1)
