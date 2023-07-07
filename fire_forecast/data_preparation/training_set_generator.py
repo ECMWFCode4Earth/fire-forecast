@@ -41,7 +41,7 @@ class TrainingSetGenerator:
             )
 
             satellite_dataset = satellite_dataset.where(
-                satellite_dataset.offire.isel(
+                satellite_dataset.frpfire.isel(  # satellite_dataset.offire.isel(
                     longitude_pixel=1, latitude_pixel=1, time_index=slice(24, 48)
                 ).sum("time_index")
                 > 0,
