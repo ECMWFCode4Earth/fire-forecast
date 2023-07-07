@@ -51,22 +51,22 @@ class ToyDataset:
         )
         # Add temperature
         ds["temperature"] = xr.DataArray(
-            data=[fm.create_ts_temperature(self.t, self.rng) for _ in range(n)],
+            data=[fm.create_temperature_timeseries(self.t, self.rng) for _ in range(n)],
             dims=["n", "time"],
         )
         # Add humidity
         ds["humidity"] = xr.DataArray(
-            data=[fm.create_ts_humidity(self.t, self.rng) for _ in range(n)],
+            data=[fm.create_humidity_timeseries(self.t, self.rng) for _ in range(n)],
             dims=["n", "time"],
         )
         # Add fire
         ds["fire"] = xr.DataArray(
             data=[
-                fm.create_ts_fire(
-                    t=self.t,
+                fm.create_timeseries_fire(
+                    timeseries_length=self.t,
                     biomass=self.biomass,
-                    ts_temp=ds["temperature"][i],
-                    ts_hum=ds["humidity"][i],
+                    temperature_timeseries=ds["temperature"][i],
+                    humidity_timeseries=ds["humidity"][i],
                     rng=self.rng,
                 )
                 for i in range(n)
