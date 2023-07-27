@@ -4,6 +4,26 @@ import torch
 import torch.nn as nn
 
 
+def load_model_from_config(model_config: dict) -> nn.Module:
+    """Load a model from a config dictionary.
+
+    Args:
+        model_config (dict): Model config dictionary.
+
+    Returns:
+        nn.Module: Model.
+    """
+    model = None
+    model_type = model_config["name"]
+    if model_type == "FullyConnectedForecaster":
+        model = FullyConnectedForecaster(**model_config["model_args"])
+    else:
+        raise ValueError(f"Model type {model_type} not supported.")
+    if model_config["checkpoint_path"] is not None:
+        model.load_state_dict(torch.load(model_config["checkpoint_path"]))
+    return model
+
+
 class FullyConnectedForecaster(nn.Module):
     """Simple fully connected neural network for fire forecast."""
 

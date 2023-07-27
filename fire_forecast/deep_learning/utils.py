@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+import yaml
 
 
 def flatten_features(
@@ -46,3 +47,17 @@ def flatten_labels_and_weights(labels: np.ndarray) -> Tuple[np.ndarray, np.ndarr
         target_values = labels[0]
         weights = labels[1]
         return target_values, weights
+
+
+def read_config(config_path: str) -> dict:
+    """Read the config file.
+
+    Args:
+        config_path (str): Path to the config file.
+
+    Returns:
+        dict: Config dictionary.
+    """
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+    return config

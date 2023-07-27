@@ -2,6 +2,26 @@ import torch
 import torch.nn as nn
 
 
+def load_loss_by_name(loss_name: str) -> nn.Module:
+    """Load a loss function by name.
+
+    Args:
+        loss_name (str): Name of the loss function.
+
+    Raises:
+        ValueError: If the loss function is not supported.
+
+    Returns:
+        nn.Module: Loss function.
+    """
+    if loss_name == "WeightedMAELoss":
+        return WeightedMAELoss()
+    elif loss_name == "WeightedL1Loss":
+        return WeightedL1Loss()
+    else:
+        raise ValueError(f"Loss function {loss_name} not supported.")
+
+
 class WeightedMAELoss(nn.Module):
     """Loss function for weighted MAE loss.
 
@@ -26,7 +46,7 @@ class WeightedMAELoss(nn.Module):
         Returns:
             torch.Tensor: Loss value.
         """
-        loss = torch.abs((predictions - labels) * weights**2)
+        loss = torch.abs((predictions - labels) * weights)
         # devide by number of non-zero-weights
         loss = loss / (weights != 0).sum()
         return loss
@@ -55,5 +75,5 @@ class WeightedL1Loss(nn.Module):
         Returns:
             torch.Tensor: Loss value.
         """
-        loss = torch.abs((predictions - labels) * weights**2).sum()
+        loss = torch.abs((predictions - labels) * weights).sum()
         return loss
