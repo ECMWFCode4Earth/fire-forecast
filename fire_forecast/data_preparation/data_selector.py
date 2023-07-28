@@ -317,6 +317,7 @@ class DataSelector:
             raise ValueError("Time grid size is not uniform")
 
     def _check_window_sizes(self):
+        """Checks if the window sizes are odd"""
         assert (
             self._latitude_window_size - 1
         ) % 2 == 0, "Latitude window size must be odd"
@@ -329,6 +330,11 @@ class DataCutter:
     """Class to cut data that is already devided into 3x3 pixels into samples."""
 
     def __init__(self, data: xr.Dataset) -> None:
+        """Initializes the DataCutter class.
+
+        Args:
+            data (xr.Dataset): The dataset to be used for the data selection.
+        """
         self._data = data
 
     @property
@@ -380,7 +386,18 @@ class DataCutter:
         self,
         fire_threshold: int = 1,
         measurement_threshold: int = 1,
-    ):
+    ) -> xr.Dataset:
+        """Cuts the data into samples.
+
+        Args:
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.Dataset: The cut data.
+        """
         days_with_enough_data = self._get_days_with_enough_data(
             fire_threshold=fire_threshold,
             measurement_threshold=measurement_threshold,
@@ -400,6 +417,18 @@ class DataCutter:
         fire_threshold: int = 1,
         measurement_threshold: int = 1,
     ) -> xr.DataArray:
+        """Finds days that have enough fire values on one day and enough
+            measurements on the following day.
+
+        Args:
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.DataArray: A boolean array indicating whether a day has enough data.
+        """
         center_pixel_data = self.data.isel(
             latitude_pixel=len(self.data.latitude_pixel) // 2,
             longitude_pixel=len(self.data.longitude_pixel) // 2,
@@ -459,6 +488,15 @@ class DataCutter:
     def _extract_sample_coordinates(
         self, days_with_enough_data: xr.DataArray
     ) -> xr.DataArray:
+        """Extracts the sample coordinates from the data.
+
+        Args:
+            days_with_enough_data (xr.DataArray): A boolean array indicating
+                whether a day has enough data.
+
+        Returns:
+            xr.DataArray: The sample coordinates.
+        """
         sliced_selection = days_with_enough_data.day.where(
             days_with_enough_data, drop=True
         )
@@ -503,6 +541,13 @@ class DataCutter:
         return sample_coordinates
 
     def _expand_time_indices_to_windows(self, time_indices: np.ndarray) -> np.ndarray:
-        """Expands the time array to include the window size"""
+        """Expands the time array to include the window size
+
+        Args:
+            time_indices (np.ndarray): The time indices to expand.
+
+        Returns:
+            np.ndarray: The expanded time indices.
+        """
         times_of_window = time_indices[:, None] + np.arange(48)[None, :]
         return times_of_window
