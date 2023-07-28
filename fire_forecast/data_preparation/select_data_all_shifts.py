@@ -18,7 +18,9 @@ def get_args():
     parser.add_argument(
         "--longitude_window_size", type=int, default=3, help="Longitude window size."
     )
-    parser.add_argument("--fire_threshold", type=int, default=1, help="Fire threshold.")
+    parser.add_argument(
+        "--fire_number_threshold", type=int, default=1, help="Fire threshold."
+    )
     parser.add_argument(
         "--measurement_threshold", type=int, default=1, help="Measurement threshold."
     )
@@ -40,5 +42,5 @@ if __name__ == "__main__":
     )
     for i in range(0, 24):
         dataselector.select_data_with_shift(
-            i, args.fire_threshold, args.measurement_threshold
+            i, args.fire_number_threshold, args.measurement_threshold
         ).to_netcdf(output_path.parent / f"{output_path.stem}_{i}.nc")
