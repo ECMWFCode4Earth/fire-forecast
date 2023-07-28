@@ -120,12 +120,21 @@ class TrainingSetGenerator:
         measurement_threshold_second_day: int = 1,
     ) -> None:
         """
-        Save the training set to disk.
+        Select training set and save it to disk.
 
         Args:
             output_path (Path): Path to the output file.
             meteo_variables (List[str]): List of meteo variables to include in the
                 training set.
+            filter_nans (bool, optional): Whether to filter out NaNs. Defaults to True.
+            fire_threshold_first_day (int, optional): Minimum number of fires to occur in
+                first day. Defaults to 1.
+            measurement_threshold_first_day (int, optional): Minimum number of
+                measurements to occur in first day. Defaults to 1.
+            fire_threshold_second_day (int, optional): Minimum number of fires to occur in
+                second day. Defaults to 1.
+            measurement_threshold_second_day (int, optional): Minimum number of
+                measurements to occur in second day. Defaults to 1.
         """
         training_set, variable_selection = self.select_training_set(
             meteo_variables,
