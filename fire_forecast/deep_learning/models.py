@@ -16,6 +16,12 @@ def load_model_from_config(model_config: dict) -> nn.Module:
     model = None
     model_type = model_config["name"]
     if model_type == "FullyConnectedForecaster":
+        if model_config["model_args"]["final_activation"] == "ReLU":
+            model_config["model_args"]["final_activation"] = nn.ReLU
+        if model_config["model_args"]["activation"] == "ReLU":
+            model_config["model_args"]["activation"] = nn.ReLU
+        elif model_config["model_args"]["activation"] == "LeakyReLU":
+            model_config["model_args"]["activation"] = nn.LeakyReLU
         model = FullyConnectedForecaster(**model_config["model_args"])
     else:
         raise ValueError(f"Model type {model_type} not supported.")
