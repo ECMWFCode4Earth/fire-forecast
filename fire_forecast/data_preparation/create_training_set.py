@@ -25,6 +25,12 @@ def get_args():
         help="List of meteo variables to include in the training set.",
     )
     parser.add_argument(
+        "--filename_start",
+        type=str,
+        default="",
+        help="File name start.",
+    )
+    parser.add_argument(
         "--filter_nans", type=bool, default=True, help="Filter out nan values."
     )
     parser.add_argument(
@@ -60,7 +66,9 @@ def main():
     logger.info(f"Loading input from {input_path}")
     if input_path.is_dir():
         dataset = xr.open_mfdataset(
-            input_path.glob("*.nc"), concat_dim="sample", combine="nested"
+            input_path.glob(f"{args.filename_start}*.nc"),
+            concat_dim="sample",
+            combine="nested",
         ).compute()
     elif input_path.is_file():
         dataset = xr.open_dataset(input_path)
