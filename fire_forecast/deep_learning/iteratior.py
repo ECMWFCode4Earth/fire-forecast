@@ -53,6 +53,7 @@ class Iterator:
         """Train the model."""
         self._output_path.mkdir(exist_ok=True)
         self._save_config()
+        self._initialize_validation_loss_file()
         epoch_tqdm = tqdm(range(self._config["training"]["epochs"]), desc="Epochs")
 
         for epoch in epoch_tqdm:
@@ -73,6 +74,12 @@ class Iterator:
         self._save_checkpoint()
 
     def _train_batch(self, data: tuple, batch_tqdm: tqdm):
+        """Train a batch.
+
+        Args:
+            data (tuple): Tuple of fire features, meteo features and labels.
+            batch_tqdm (tqdm): Tqdm object for the batch.
+        """
         self.model.train()
         fire_features, meteo_features, labels = data
         self._optimizer.zero_grad()
@@ -85,6 +92,14 @@ class Iterator:
         batch_tqdm.set_postfix({"loss": loss.item()})
 
     def _validate(self, epoch_tqdm: tqdm):
+        """Validate the model.
+
+        Args:
+            epoch_tqdm (tqdm): Tqdm object for the epoch.
+
+        Returns:
+            torch.Tensor: Validation loss.
+        """
         self.model.eval()
         validation_losses = []
         with torch.no_grad():
@@ -124,7 +139,17 @@ class Iterator:
                 f"{self._config['training']['learning_rate_development']['type']}"
             )
 
+    def _initialize_validation_loss_file(self):
+        """Initialize the validation loss file."""
+        with open(self._output_path / "validation_loss.txt", "w") as file:
+            file.write("epoch,validation_loss\n")
+
     def _log_validation_loss(self, validation_loss: torch.Tensor):
+        """Log the validation loss to a file.
+
+        Args:
+            validation_loss (torch.Tensor): Validation loss.
+        """
         with open(self._output_path / "validation_loss.txt", "a") as file:
             file.write(f"{self.epoch},{validation_loss.item()}\n")
 
