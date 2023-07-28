@@ -1,6 +1,8 @@
+import warnings
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 from tqdm.auto import tqdm
 
@@ -315,9 +317,253 @@ class DataSelector:
             raise ValueError("Time grid size is not uniform")
 
     def _check_window_sizes(self):
+        """Checks if the window sizes are odd"""
         assert (
             self._latitude_window_size - 1
         ) % 2 == 0, "Latitude window size must be odd"
         assert (
             self._longitude_window_size - 1
         ) % 2 == 0, "Longitude window size must be odd"
+
+
+class DataCutter:
+    """Class to cut data that is already devided into 3x3 pixels into samples."""
+
+    def __init__(self, data: xr.Dataset) -> None:
+        """Initializes the DataCutter class.
+
+        Args:
+            data (xr.Dataset): The dataset to be used for the data selection.
+        """
+        self._data = data
+
+    @property
+    def data(self) -> xr.Dataset:
+        return self._data
+
+    def cut_data_shifted(
+        self,
+        shift: int = 1,
+        fire_threshold: int = 1,
+        measurement_threshold: int = 1,
+    ) -> xr.Dataset:
+        """Cuts the data into samples with the specified shift.
+
+        Args:
+            shift (int, optional): The amount of hours to shift the data.
+                Defaults to 1.
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.Dataset: The cut data.
+        """
+        original_times = self.data.time.values
+        shifted_times = original_times + np.timedelta64(shift, "h")
+        self._data = self.data.assign_coords(
+            time=(("sample", "time_index"), shifted_times)
+        )
+
+        cut_data = self.cut_data(
+            fire_threshold=fire_threshold,
+            measurement_threshold=measurement_threshold,
+        )
+
+        self._data = self.data.assign_coords(
+            time=(("sample", "time_index"), original_times)
+        )
+        cut_data = cut_data.assign_coords(
+            time=(
+                ("sample", "time_index"),
+                cut_data.time.values - np.timedelta64(shift, "h"),
+            )
+        )
+        return cut_data
+
+    def cut_data(
+        self,
+        fire_threshold: int = 1,
+        measurement_threshold: int = 1,
+    ) -> xr.Dataset:
+        """Cuts the data into samples.
+
+        Args:
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.Dataset: The cut data.
+        """
+        days_with_enough_data = self._get_days_with_enough_data(
+            fire_threshold=fire_threshold,
+            measurement_threshold=measurement_threshold,
+        )
+        sample_coordinates = self._extract_sample_coordinates(days_with_enough_data)
+
+        filtered_data = self.data.sel(
+            sample=sample_coordinates.sample.astype(int),
+            time_index=sample_coordinates.time_index.astype(int),
+        )
+        filtered_data = filtered_data.rename(
+            new_sample="sample", new_time_index="time_index"
+        )
+        return filtered_data
+
+    def _get_days_with_enough_data(
+        self,
+        fire_threshold: int = 1,
+        measurement_threshold: int = 1,
+    ) -> xr.DataArray:
+        """Finds days that have enough fire values on one day and enough
+            measurements on the following day.
+
+        Args:
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.DataArray: A boolean array indicating whether a day has enough data.
+        """
+        center_pixel_data = self.data.isel(
+            latitude_pixel=len(self.data.latitude_pixel) // 2,
+            longitude_pixel=len(self.data.longitude_pixel) // 2,
+        ).compute()
+        days_with_enough_data_collection = []
+        for sample in tqdm(
+            center_pixel_data.sample.values, desc="Collecting days with enough data"
+        ):
+            center_pixel_sample = center_pixel_data.sel(sample=sample)
+            center_pixel_sample = center_pixel_sample.assign_coords(
+                time_index=center_pixel_sample.time.values
+            )
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                fire_values_per_day: xr.DataArray = (
+                    (center_pixel_sample.total_frpfire > 0)
+                    .assign_coords(
+                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
+                            "datetime64[ns]"
+                        )
+                    )
+                    .groupby("day")
+                    .sum(dim="time_index")
+                )
+                measurement_values_per_day: xr.DataArray = (
+                    (center_pixel_sample.total_offire > 0)
+                    .assign_coords(
+                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
+                            "datetime64[ns]"
+                        )
+                    )
+                    .groupby("day")
+                    .sum(dim="time_index")
+                    .shift(day=-1, fill_value=0)
+                )
+            days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
+                measurement_values_per_day >= measurement_threshold
+            ).expand_dims("sample").assign_coords(sample=[sample])
+
+            days_with_enough_data = (
+                days_with_enough_data.rename(day="day_index")
+                .assign_coords(
+                    day=(
+                        ("sample", "day_index"),
+                        days_with_enough_data.day.values[None, :],
+                    )
+                )
+                .drop("day_index")
+            )
+            days_with_enough_data_collection.append(days_with_enough_data)
+        days_with_enough_data = xr.concat(
+            days_with_enough_data_collection, dim="sample"
+        ).transpose("sample", "day_index")
+        return days_with_enough_data.compute()
+
+    def _extract_sample_coordinates(
+        self, days_with_enough_data: xr.DataArray
+    ) -> xr.DataArray:
+        """Extracts the sample coordinates from the data.
+
+        Args:
+            days_with_enough_data (xr.DataArray): A boolean array indicating
+                whether a day has enough data.
+
+        Returns:
+            xr.DataArray: The sample coordinates.
+        """
+        sliced_selection = days_with_enough_data.day.where(
+            days_with_enough_data, drop=True
+        )
+        new_sample_time_coordinates = []
+        for sample in sliced_selection.sample.values:
+            for day_index in sliced_selection.day_index.values:
+                if pd.isnull(
+                    sliced_selection.sel(sample=sample, day_index=day_index).item()
+                ):
+                    continue
+                time_of_day = sliced_selection.sel(
+                    sample=sample, day_index=day_index
+                ).values
+                sample_data = self.data.sel(sample=sample)
+                try:
+                    time_index_of_day = (
+                        sample_data.time_index.where(
+                            (sample_data.time == time_of_day).compute(), drop=True
+                        )
+                        .compute()
+                        .item()
+                    )
+                except ValueError:
+                    continue
+                new_sample_time_coordinates.append((sample, time_index_of_day))
+        new_sample_time_coordinates = np.array(new_sample_time_coordinates).T
+
+        sample_coordinates = xr.Dataset(
+            data_vars=dict(
+                time_index=(
+                    ["new_sample", "new_time_index"],
+                    self._expand_time_indices_to_windows(
+                        new_sample_time_coordinates[1]
+                    ),
+                ),
+                sample=(
+                    ["new_sample"],
+                    new_sample_time_coordinates[0],
+                ),
+            ),
+        )
+
+        return self._filter_coordinates_out_of_bounds(sample_coordinates)
+
+    def _filter_coordinates_out_of_bounds(self, sample_coordinates: xr.Dataset):
+        sample_coordinates = sample_coordinates.where(
+            (
+                sample_coordinates.time_index.min("new_time_index")
+                >= self.data.time_index.min()
+            )
+            & (
+                sample_coordinates.time_index.max("new_time_index")
+                <= self.data.time_index.max()
+            ),
+            drop=True,
+        )
+        return sample_coordinates
+
+    def _expand_time_indices_to_windows(self, time_indices: np.ndarray) -> np.ndarray:
+        """Expands the time array to include the window size
+
+        Args:
+            time_indices (np.ndarray): The time indices to expand.
+
+        Returns:
+            np.ndarray: The expanded time indices.
+        """
+        times_of_window = time_indices[:, None] + np.arange(48)[None, :]
+        return times_of_window
