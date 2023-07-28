@@ -17,7 +17,9 @@ def get_args():
     parser.add_argument(
         "--longitude_window_size", type=int, default=3, help="Longitude window size."
     )
-    parser.add_argument("--fire_threshold", type=int, default=1, help="Fire threshold.")
+    parser.add_argument(
+        "--fire_number_threshold", type=int, default=1, help="Fire threshold."
+    )
     parser.add_argument(
         "--measurement_threshold", type=int, default=1, help="Measurement threshold."
     )
@@ -36,6 +38,6 @@ if __name__ == "__main__":
     dataselector = DataSelector(
         full_dataset, args.latitude_window_size, args.longitude_window_size
     )
-    dataselector.select_data(args.fire_threshold, args.measurement_threshold).to_netcdf(
-        args.output_path
-    )
+    dataselector.select_data(
+        args.fire_number_threshold, args.measurement_threshold
+    ).to_netcdf(args.output_path)
