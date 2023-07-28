@@ -403,6 +403,7 @@ class DataCutter:
             measurement_threshold=measurement_threshold,
         )
         sample_coordinates = self._extract_sample_coordinates(days_with_enough_data)
+
         filtered_data = self.data.sel(
             sample=sample_coordinates.sample.astype(int),
             time_index=sample_coordinates.time_index.astype(int),
@@ -537,6 +538,21 @@ class DataCutter:
                     new_sample_time_coordinates[0],
                 ),
             ),
+        )
+
+        return self._filter_coordinates_out_of_bounds(sample_coordinates)
+
+    def _filter_coordinates_out_of_bounds(self, sample_coordinates: xr.Dataset):
+        sample_coordinates = sample_coordinates.where(
+            (
+                sample_coordinates.time_index.min("new_time_index")
+                >= self.data.time_index.min()
+            )
+            & (
+                sample_coordinates.time_index.max("new_time_index")
+                <= self.data.time_index.max()
+            ),
+            drop=True,
         )
         return sample_coordinates
 

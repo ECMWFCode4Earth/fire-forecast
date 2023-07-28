@@ -1,4 +1,4 @@
-name: fire-forecast_test
+name: fire-forecast
 channels:
   - conda-forge
 dependencies:

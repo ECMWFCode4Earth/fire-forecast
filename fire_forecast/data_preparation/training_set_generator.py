@@ -50,29 +50,41 @@ class TrainingSetGenerator:
         for satiellite_index in dataset.ident.values:
             satellite_dataset = dataset.sel(ident=satiellite_index)
             satellite_dataset = satellite_dataset.where(
-                satellite_dataset.frpfire.isel(
-                    longitude_pixel=1, latitude_pixel=1, time_index=slice(0, 24)
+                (
+                    satellite_dataset.frpfire.isel(
+                        longitude_pixel=1, latitude_pixel=1, time_index=slice(0, 24)
+                    )
+                    > 0
                 ).sum("time_index")
                 >= fire_threshold_first_day,
                 drop=True,
             )
             satellite_dataset = satellite_dataset.where(
-                satellite_dataset.offire.isel(
-                    longitude_pixel=1, latitude_pixel=1, time_index=slice(0, 24)
+                (
+                    satellite_dataset.offire.isel(
+                        longitude_pixel=1, latitude_pixel=1, time_index=slice(0, 24)
+                    )
+                    > 0
                 ).sum("time_index")
                 >= measurement_threshold_first_day,
                 drop=True,
             )
             satellite_dataset = satellite_dataset.where(
-                satellite_dataset.frpfire.isel(
-                    longitude_pixel=1, latitude_pixel=1, time_index=slice(24, 48)
+                (
+                    satellite_dataset.frpfire.isel(
+                        longitude_pixel=1, latitude_pixel=1, time_index=slice(24, 48)
+                    )
+                    > 0
                 ).sum("time_index")
                 >= fire_threshold_second_day,
                 drop=True,
             )
             satellite_dataset = satellite_dataset.where(
-                satellite_dataset.offire.isel(
-                    longitude_pixel=1, latitude_pixel=1, time_index=slice(24, 48)
+                (
+                    satellite_dataset.offire.isel(
+                        longitude_pixel=1, latitude_pixel=1, time_index=slice(24, 48)
+                    )
+                    > 0
                 ).sum("time_index")
                 >= measurement_threshold_second_day,
                 drop=True,
