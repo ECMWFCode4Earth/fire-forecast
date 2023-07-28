@@ -1,8 +1,13 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 import xarray as xr
 
-from fire_forecast.data_preparation.data_selector import DataSelector
+from fire_forecast.data_preparation.data_selector import DataCutter, DataSelector
+
+FILE_EXAMPLES = Path(__file__).parent / "file_examples"
+# TESTS FOR DATA SELECTOR
 
 
 @pytest.fixture
@@ -172,9 +177,6 @@ def test_select_data(data_selector: DataSelector):
     )
 
 
-# def test_select_data_hourly(data_selector: DataSelector)
-
-
 def test_add_metadata(
     data_selector: DataSelector,
     filtered_data: xr.Dataset,
@@ -255,3 +257,42 @@ def test_select_data_with_shift(data_selector: DataSelector, shift):
             + np.timedelta64(1, "D")
             - shift * np.timedelta64(1, "h")
         )
+
+
+# TESTS FOR DATA CUTTER
+@pytest.fixture
+def data_for_cutter():
+    data = xr.open_dataset(FILE_EXAMPLES / "GFAS_for_cutter.nc")
+    data["total_frpfire"] = data["frpfire"].sum("ident")
+    data["total_offire"] = data["offire"].sum("ident")
+    return data
+
+
+@pytest.fixture
+def data_cutter(data_for_cutter):
+    return DataCutter(data_for_cutter)
+
+
+@pytest.fixture
+def days_with_enough_data_cutter(data_cutter: DataCutter):
+    days_with_enough_data = data_cutter._get_days_with_enough_data(1, 1)
+    return days_with_enough_data
+
+
+def test_init_cutter(data_for_cutter):
+    data_cutter = DataCutter(data_for_cutter)
+    assert data_cutter.data.equals(data_for_cutter)
+
+
+def test_get_days_with_enough_data_cutter(days_with_enough_data_cutter):
+    assert set(["sample", "day_index"]) == set(days_with_enough_data_cutter.dims)
+
+
+def test_cut_data(data_cutter):
+    filtered_data = data_cutter.cut_data(1, 1)
+    assert (
+        filtered_data.isel(longitude_pixel=1, latitude_pixel=1).total_frpfire.sum(
+            "time_index"
+        )
+        > 0
+    ).all()
