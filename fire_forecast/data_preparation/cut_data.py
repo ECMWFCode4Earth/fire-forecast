@@ -13,12 +13,6 @@ def get_args():
     )
     parser.add_argument("--output_path", type=str, help="Path to output dataset.")
     parser.add_argument(
-        "--latitude_window_size", type=int, default=3, help="Latitude window size."
-    )
-    parser.add_argument(
-        "--longitude_window_size", type=int, default=3, help="Longitude window size."
-    )
-    parser.add_argument(
         "--fire_number_threshold", type=int, default=1, help="Fire threshold."
     )
     parser.add_argument(
@@ -29,7 +23,7 @@ def get_args():
 
 if __name__ == "__main__":
     args = get_args()
-    full_dataset = xr.open_mfdataset(args.data_paths)
+    full_dataset = xr.open_mfdataset(args.data_paths).compute()
 
     full_dataset["total_frpfire"] = full_dataset.frpfire.sum("ident")
     full_dataset["total_offire"] = full_dataset.offire.sum("ident")

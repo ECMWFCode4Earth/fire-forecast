@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -334,11 +335,46 @@ class DataCutter:
     def data(self) -> xr.Dataset:
         return self._data
 
-    def cut_data_with_shift(
-        self, shift: int = 1, fire_threshold: int = 1, measurement_threshold: int = 1
+    def cut_data_shifted(
+        self,
+        shift: int = 1,
+        fire_threshold: int = 1,
+        measurement_threshold: int = 1,
     ) -> xr.Dataset:
-        pass
-        # CONTINUE HERE
+        """Cuts the data into samples with the specified shift.
+
+        Args:
+            shift (int, optional): The amount of hours to shift the data.
+                Defaults to 1.
+            fire_threshold (int, optional): The minimum number of fire pixels
+                in a window. Defaults to 1.
+            measurement_threshold (int, optional): The minimum number of
+                measurements in a window. Defaults to 1.
+
+        Returns:
+            xr.Dataset: The cut data.
+        """
+        original_times = self.data.time.values
+        shifted_times = original_times + np.timedelta64(shift, "h")
+        self._data = self.data.assign_coords(
+            time=(("sample", "time_index"), shifted_times)
+        )
+
+        cut_data = self.cut_data(
+            fire_threshold=fire_threshold,
+            measurement_threshold=measurement_threshold,
+        )
+
+        self._data = self.data.assign_coords(
+            time=(("sample", "time_index"), original_times)
+        )
+        cut_data = cut_data.assign_coords(
+            time=(
+                ("sample", "time_index"),
+                cut_data.time.values - np.timedelta64(shift, "h"),
+            )
+        )
+        return cut_data
 
     def cut_data(
         self,
@@ -367,7 +403,7 @@ class DataCutter:
         center_pixel_data = self.data.isel(
             latitude_pixel=len(self.data.latitude_pixel) // 2,
             longitude_pixel=len(self.data.longitude_pixel) // 2,
-        )
+        ).compute()
         days_with_enough_data_collection = []
         for sample in tqdm(
             center_pixel_data.sample.values, desc="Collecting days with enough data"
@@ -377,29 +413,29 @@ class DataCutter:
                 time_index=center_pixel_sample.time.values
             )
 
-            fire_values_per_day: xr.DataArray = (
-                (center_pixel_sample.total_frpfire > 0)
-                .assign_coords(
-                    day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                        "datetime64[ns]"
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                fire_values_per_day: xr.DataArray = (
+                    (center_pixel_sample.total_frpfire > 0)
+                    .assign_coords(
+                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
+                            "datetime64[ns]"
+                        )
                     )
+                    .groupby("day")
+                    .sum(dim="time_index")
                 )
-                .groupby("day")
-                .sum(dim="time_index")
-                .compute()
-            )
-            measurement_values_per_day: xr.DataArray = (
-                (center_pixel_sample.total_offire > 0)
-                .assign_coords(
-                    day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                        "datetime64[ns]"
+                measurement_values_per_day: xr.DataArray = (
+                    (center_pixel_sample.total_offire > 0)
+                    .assign_coords(
+                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
+                            "datetime64[ns]"
+                        )
                     )
+                    .groupby("day")
+                    .sum(dim="time_index")
+                    .shift(day=-1, fill_value=0)
                 )
-                .groupby("day")
-                .sum(dim="time_index")
-                .shift(day=-1, fill_value=0)
-                .compute()
-            )
             days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
                 measurement_values_per_day >= measurement_threshold
             ).expand_dims("sample").assign_coords(sample=[sample])
@@ -437,13 +473,16 @@ class DataCutter:
                     sample=sample, day_index=day_index
                 ).values
                 sample_data = self.data.sel(sample=sample)
-                time_index_of_day = (
-                    sample_data.time_index.where(
-                        (sample_data.time == time_of_day).compute(), drop=True
+                try:
+                    time_index_of_day = (
+                        sample_data.time_index.where(
+                            (sample_data.time == time_of_day).compute(), drop=True
+                        )
+                        .compute()
+                        .item()
                     )
-                    .compute()
-                    .item()
-                )
+                except ValueError:
+                    continue
                 new_sample_time_coordinates.append((sample, time_index_of_day))
         new_sample_time_coordinates = np.array(new_sample_time_coordinates).T
 
