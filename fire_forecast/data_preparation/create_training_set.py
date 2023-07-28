@@ -24,6 +24,33 @@ def get_args():
         nargs="+",
         help="List of meteo variables to include in the training set.",
     )
+    parser.add_argument(
+        "--filter_nans", type=bool, default=True, help="Filter out nan values."
+    )
+    parser.add_argument(
+        "--fire_number_threshold_first_day",
+        type=int,
+        default=1,
+        help="Data with less fire occurencies on the first day are filtered out.",
+    )
+    parser.add_argument(
+        "--measurement_threshold_first_day",
+        type=int,
+        default=1,
+        help="Data with less measurements on the first day are filtered out.",
+    )
+    parser.add_argument(
+        "--fire_number_threshold_second_day",
+        type=int,
+        default=1,
+        help="Data with less fire occurencies on the second day are filtered out.",
+    )
+    parser.add_argument(
+        "--measurement_threshold_second_day",
+        type=int,
+        default=1,
+        help="Data with less measurements on the second day are filtered out.",
+    )
     return parser.parse_args()
 
 
@@ -41,7 +68,15 @@ def main():
         raise ValueError("Input path must be a directory or a file.")
     trainingsetgenerator = TrainingSetGenerator(dataset)
     logger.info(f"Saving training set to {args.output_file}")
-    trainingsetgenerator.save_training_set(Path(args.output_file), args.meteo_variables)
+    trainingsetgenerator.save_training_set(
+        Path(args.output_file),
+        args.meteo_variables,
+        args.filter_nans,
+        args.fire_number_threshold_first_day,
+        args.measurement_threshold_first_day,
+        args.fire_number_threshold_second_day,
+        args.measurement_threshold_second_day,
+    )
 
 
 if __name__ == "__main__":
