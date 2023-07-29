@@ -19,3 +19,10 @@ iterator.train()
 ```
 This will start a training according to the settings in the config.
 A copy of the config is also saved to the output folder so a model can be reproduced, and checkpoints of the networks can be found in the output folder to continue a training.
+
+To find out the input size:
+```
+from fire_forecast.deep_learning.fire_dataset import FireDataset
+x = FireDataset("train.hdf")
+x.input_size
+```

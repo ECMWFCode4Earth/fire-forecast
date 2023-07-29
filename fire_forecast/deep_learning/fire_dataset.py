@@ -56,4 +56,8 @@ class FireDataset(Dataset):
         labels = data[:, 0:2, 24:, 1, 1]
         fire_features = data[:, 0:2, :24, :, :]
         meteo_features = data[:, 2:, :, :, :]
+        # select only central pixel
+        # labels = data[:, 0:2, 24:, 1, 1]
+        # fire_features = data[:, 0:2, :24, 1:2, 1:2]
+        # meteo_features = data[:, 2:, :, 1:2, 1:2]
         return fire_features, meteo_features, labels, data_variables
