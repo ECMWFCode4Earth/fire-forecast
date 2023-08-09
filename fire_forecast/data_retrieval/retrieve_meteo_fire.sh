@@ -13,7 +13,7 @@ DATADIR_0p5=/ec/res4/scratch/cyjk/code4earth/0p5
 mkdir -p $DATADIR_0p5
 cd $DATADIR_0p5
 
-for year in {2022..2023}; do
+for year in {2020..2023}; do
     
     day1=${year}0501
     if [ $year != 2023 ]; then
@@ -22,7 +22,7 @@ for year in {2022..2023}; do
 	dayX=${year}0731
     fi # year
     # only for testing:
-    dayX=${year}0502
+    #dayX=${year}0502
 
     echo "Processing meteo in time range $day1 to $dayX ..."
 
