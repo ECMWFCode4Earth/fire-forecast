@@ -60,7 +60,7 @@ grid=0.5/0.5,
 target="meteo_${levtype}_0p5_${day1}_${dayX}.grib"
 EOF
 
-    $GRIB2NC_CMD -D NC_FLOAT -o meteo_${levtype}_0p5_${day1}_${dayX}.nc -k 4 -d 6 meteo_sfc_05p_${day1}_${dayX}.grib
+    $GRIB2NC_CMD -D NC_FLOAT -o meteo_${levtype}_0p5_${day1}_${dayX}.nc -k 4 -d 6 meteo_${levtype}_0p5_${day1}_${dayX}.grib
 
     done # levtype
 
