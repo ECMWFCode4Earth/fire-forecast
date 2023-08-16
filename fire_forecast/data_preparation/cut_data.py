@@ -25,8 +25,8 @@ if __name__ == "__main__":
     args = get_args()
     full_dataset = xr.open_mfdataset(args.data_paths).compute()
 
-    full_dataset["total_frpfire"] = full_dataset.frpfire.sum("ident")
-    full_dataset["total_offire"] = full_dataset.offire.sum("ident")
+    full_dataset["total_frpfire"] = full_dataset.frpfire 
+    full_dataset["total_offire"] = full_dataset.offire 
 
     dataselector = DataCutter(full_dataset)
     dataselector.cut_data(
