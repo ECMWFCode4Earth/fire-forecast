@@ -1,9 +1,10 @@
+import time
 import warnings
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 import xarray as xr
+from loguru import logger
 from tqdm.auto import tqdm
 
 
@@ -398,16 +399,25 @@ class DataCutter:
         Returns:
             xr.Dataset: The cut data.
         """
+        # get time for logging:
+        tic = time.time()
         days_with_enough_data = self._get_days_with_enough_data(
             fire_threshold=fire_threshold,
             measurement_threshold=measurement_threshold,
         )
+        toc = time.time()
+        logger.info(f"Time to get days with enough data: {toc-tic:.2f} seconds")
+        tic = time.time()
         sample_coordinates = self._extract_sample_coordinates(days_with_enough_data)
-
+        toc = time.time()
+        logger.info(f"Time to extract sample coordinates: {toc-tic:.2f} seconds")
+        tic = time.time()
         filtered_data = self.data.sel(
             sample=sample_coordinates.sample.astype(int),
             time_index=sample_coordinates.time_index.astype(int),
         )
+        toc = time.time()
+        logger.info(f"Time to filter data: {toc-tic:.2f} seconds")
         filtered_data = filtered_data.rename(
             new_sample="sample", new_time_index="time_index"
         )
@@ -498,32 +508,10 @@ class DataCutter:
         Returns:
             xr.DataArray: The sample coordinates.
         """
-        sliced_selection = days_with_enough_data.day.where(
-            days_with_enough_data, drop=True
+
+        new_sample_time_coordinates = (
+            np.nonzero(days_with_enough_data.values) * np.array([1, 24])[..., None]
         )
-        new_sample_time_coordinates = []
-        for sample in sliced_selection.sample.values:
-            for day_index in sliced_selection.day_index.values:
-                if pd.isnull(
-                    sliced_selection.sel(sample=sample, day_index=day_index).item()
-                ):
-                    continue
-                time_of_day = sliced_selection.sel(
-                    sample=sample, day_index=day_index
-                ).values
-                sample_data = self.data.sel(sample=sample)
-                try:
-                    time_index_of_day = (
-                        sample_data.time_index.where(
-                            (sample_data.time == time_of_day).compute(), drop=True
-                        )
-                        .compute()
-                        .item()
-                    )
-                except ValueError:
-                    continue
-                new_sample_time_coordinates.append((sample, time_index_of_day))
-        new_sample_time_coordinates = np.array(new_sample_time_coordinates).T
 
         sample_coordinates = xr.Dataset(
             data_vars=dict(
