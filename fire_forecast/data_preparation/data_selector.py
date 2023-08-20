@@ -1,4 +1,5 @@
 import time
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -454,27 +455,29 @@ class DataCutter:
             time_index=center_pixel_data.time.isel(sample=0).values
         )
 
-        fire_values_per_day: xr.DataArray = (
-            (center_pixel_data.total_frpfire > 0)
-            .assign_coords(
-                day=center_pixel_data.time_index.astype("datetime64[D]").astype(
-                    "datetime64[ns]"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fire_values_per_day: xr.DataArray = (
+                (center_pixel_data.total_frpfire > 0)
+                .assign_coords(
+                    day=center_pixel_data.time_index.astype("datetime64[D]").astype(
+                        "datetime64[ns]"
+                    )
                 )
+                .groupby("day")
+                .sum(dim="time_index")
             )
-            .groupby("day")
-            .sum(dim="time_index")
-        )
-        measurement_values_per_day: xr.DataArray = (
-            (center_pixel_data.total_offire > 0)
-            .assign_coords(
-                day=center_pixel_data.time_index.astype("datetime64[D]").astype(
-                    "datetime64[ns]"
+            measurement_values_per_day: xr.DataArray = (
+                (center_pixel_data.total_offire > 0)
+                .assign_coords(
+                    day=center_pixel_data.time_index.astype("datetime64[D]").astype(
+                        "datetime64[ns]"
+                    )
                 )
+                .groupby("day")
+                .sum(dim="time_index")
+                .shift(day=-1, fill_value=0)
             )
-            .groupby("day")
-            .sum(dim="time_index")
-            .shift(day=-1, fill_value=0)
-        )
         days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
             measurement_values_per_day >= measurement_threshold
         )
@@ -492,7 +495,7 @@ class DataCutter:
                 )
             )
             .drop("day_index")
-        )
+        ).transpose("sample", "day_index")
         return days_with_enough_data.compute()
 
     def _extract_sample_coordinates(

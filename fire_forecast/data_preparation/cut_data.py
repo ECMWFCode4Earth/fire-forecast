@@ -1,6 +1,7 @@
 import argparse
 
 import xarray as xr
+from loguru import logger
 
 from fire_forecast.data_preparation.data_selector import DataCutter
 
@@ -23,12 +24,16 @@ def get_args():
 
 if __name__ == "__main__":
     args = get_args()
+    logger.info(f"Loading data from {args.data_paths}...")
     full_dataset = xr.open_mfdataset(args.data_paths).compute()
-
-    full_dataset["total_frpfire"] = full_dataset.frpfire 
-    full_dataset["total_offire"] = full_dataset.offire 
+    full_dataset["total_frpfire"] = full_dataset.frpfire
+    full_dataset["total_offire"] = full_dataset.offire
 
     dataselector = DataCutter(full_dataset)
-    dataselector.cut_data(
+    logger.info("Cutting data...")
+    cut_data = dataselector.cut_data(
         args.fire_number_threshold, args.measurement_threshold
-    ).to_netcdf(args.output_path)
+    )
+    logger.info(f"Saving data to {args.output_path}...")
+    cut_data.to_netcdf(args.output_path)
+    logger.info("Done.")
