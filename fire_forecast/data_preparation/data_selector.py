@@ -1,5 +1,4 @@
 import time
-import warnings
 from typing import Optional
 
 import numpy as np
@@ -444,56 +443,51 @@ class DataCutter:
             latitude_pixel=len(self.data.latitude_pixel) // 2,
             longitude_pixel=len(self.data.longitude_pixel) // 2,
         ).compute()
-        days_with_enough_data_collection = []
-        for sample in tqdm(
-            center_pixel_data.sample.values, desc="Collecting days with enough data"
-        ):
-            center_pixel_sample = center_pixel_data.sel(sample=sample)
-            center_pixel_sample = center_pixel_sample.assign_coords(
-                time_index=center_pixel_sample.time.values
+
+        center_pixel_data_new = center_pixel_data.assign_coords(
+            time_index=center_pixel_data.time.isel(sample=0).values.astype(
+                "datetime64[ns]"
             )
+        )
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                fire_values_per_day: xr.DataArray = (
-                    (center_pixel_sample.total_frpfire > 0)
-                    .assign_coords(
-                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                            "datetime64[ns]"
-                        )
-                    )
-                    .groupby("day")
-                    .sum(dim="time_index")
+        fire_values_per_day: xr.DataArray = (
+            (center_pixel_data_new.total_frpfire > 0)
+            .assign_coords(
+                day=center_pixel_data_new.time_index.astype("datetime64[D]").astype(
+                    "datetime64[ns]"
                 )
-                measurement_values_per_day: xr.DataArray = (
-                    (center_pixel_sample.total_offire > 0)
-                    .assign_coords(
-                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                            "datetime64[ns]"
-                        )
-                    )
-                    .groupby("day")
-                    .sum(dim="time_index")
-                    .shift(day=-1, fill_value=0)
+            )
+            .groupby("day")
+            .sum(dim="time_index")
+        )
+        measurement_values_per_day: xr.DataArray = (
+            (center_pixel_data_new.total_offire > 0)
+            .assign_coords(
+                day=center_pixel_data_new.time_index.astype("datetime64[D]").astype(
+                    "datetime64[ns]"
                 )
-            days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
-                measurement_values_per_day >= measurement_threshold
-            ).expand_dims("sample").assign_coords(sample=[sample])
-
-            days_with_enough_data = (
-                days_with_enough_data.rename(day="day_index")
-                .assign_coords(
-                    day=(
-                        ("sample", "day_index"),
+            )
+            .groupby("day")
+            .sum(dim="time_index")
+            .shift(day=-1, fill_value=0)
+        )
+        days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
+            measurement_values_per_day >= measurement_threshold
+        )
+        days_with_enough_data = (
+            days_with_enough_data.rename(day="day_index")
+            .assign_coords(
+                day=(
+                    ("sample", "day_index"),
+                    np.repeat(
                         days_with_enough_data.day.values[None, :],
-                    )
+                        len(days_with_enough_data.sample),
+                        axis=0,
+                    ),
                 )
-                .drop("day_index")
             )
-            days_with_enough_data_collection.append(days_with_enough_data)
-        days_with_enough_data = xr.concat(
-            days_with_enough_data_collection, dim="sample"
-        ).transpose("sample", "day_index")
+            .drop("day_index")
+        )
         return days_with_enough_data.compute()
 
     def _extract_sample_coordinates(
