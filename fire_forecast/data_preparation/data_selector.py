@@ -439,21 +439,25 @@ class DataCutter:
         Returns:
             xr.DataArray: A boolean array indicating whether a day has enough data.
         """
+
         center_pixel_data = self.data.isel(
             latitude_pixel=len(self.data.latitude_pixel) // 2,
             longitude_pixel=len(self.data.longitude_pixel) // 2,
         ).compute()
 
-        center_pixel_data_new = center_pixel_data.assign_coords(
-            time_index=center_pixel_data.time.isel(sample=0).values.astype(
-                "datetime64[ns]"
-            )
+        assert (
+            center_pixel_data.time.isel(time_index=0)
+            == center_pixel_data.time.isel(time_index=0, sample=0)
+        ).all(), "Time indices are not the same for all samples"
+
+        center_pixel_data = center_pixel_data.assign_coords(
+            time_index=center_pixel_data.time.isel(sample=0).values
         )
 
         fire_values_per_day: xr.DataArray = (
-            (center_pixel_data_new.total_frpfire > 0)
+            (center_pixel_data.total_frpfire > 0)
             .assign_coords(
-                day=center_pixel_data_new.time_index.astype("datetime64[D]").astype(
+                day=center_pixel_data.time_index.astype("datetime64[D]").astype(
                     "datetime64[ns]"
                 )
             )
@@ -461,9 +465,9 @@ class DataCutter:
             .sum(dim="time_index")
         )
         measurement_values_per_day: xr.DataArray = (
-            (center_pixel_data_new.total_offire > 0)
+            (center_pixel_data.total_offire > 0)
             .assign_coords(
-                day=center_pixel_data_new.time_index.astype("datetime64[D]").astype(
+                day=center_pixel_data.time_index.astype("datetime64[D]").astype(
                     "datetime64[ns]"
                 )
             )
@@ -474,6 +478,7 @@ class DataCutter:
         days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
             measurement_values_per_day >= measurement_threshold
         )
+
         days_with_enough_data = (
             days_with_enough_data.rename(day="day_index")
             .assign_coords(
