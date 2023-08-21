@@ -24,6 +24,7 @@ class Iterator:
             config (dict): Config dictionary.
         """
         self._config = config
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.criterion = load_loss_by_name(config["training"]["loss_function"])
         self.train_dataset = FireDataset(config["data"]["train_path"])
         self.validation_dataset = FireDataset(config["data"]["validation_path"])
@@ -51,6 +52,7 @@ class Iterator:
 
     def train(self):
         """Train the model."""
+        self.model = self.model.to(self.device)
         self._output_path.mkdir(exist_ok=True)
         self._save_config()
         self._initialize_validation_loss_file()
@@ -83,9 +85,13 @@ class Iterator:
         self.model.train()
         fire_features, meteo_features, labels = data
         self._optimizer.zero_grad()
-        features = flatten_features(fire_features, meteo_features)
-        predictions = self.model(torch.from_numpy(features))
+        features = torch.from_numpy(flatten_features(fire_features, meteo_features)).to(
+            self.device
+        )
+        predictions = self.model(features)
         target_values, weights = flatten_labels_and_weights(labels)
+        target_values = target_values.to(self.device)
+        weights = weights.to(self.device)
         loss = self.criterion(predictions, target_values, weights)
         loss.backward()
         self._optimizer.step()
@@ -105,9 +111,13 @@ class Iterator:
         with torch.no_grad():
             for data in self.validation_dataloader:
                 fire_features, meteo_features, labels = data
-                features = flatten_features(fire_features, meteo_features)
-                predictions = self.model(torch.from_numpy(features))
+                features = torch.from_numpy(
+                    flatten_features(fire_features, meteo_features)
+                ).to(self.device)
+                predictions = self.model(features)
                 target_values, weights = flatten_labels_and_weights(labels)
+                target_values = target_values.to(self.device)
+                weights = weights.to(self.device)
                 validation_losses.append(
                     self.criterion(predictions, target_values, weights)
                 )
