@@ -7,9 +7,12 @@ Tool for forecast of fire radiative power.
 git clone git@github.com:ECMWFCode4Earth/fire-forecast.git
 ```
 ### 2. Install the conda environment
-To create the environment switch to the `fire-forcast` folder created by the `git clone` above and execute:
+To create the environment switch to the `fire-forcast` folder created by the `git clone` above and executeone of the following depending on your system:
 ```
-conda env create -f ci/environment.yaml
+# For system without GPU:
+conda env create -f ci/environment_cpu.yaml
+# For system with GPU
+conda env create -f ci/environment_gpu.yaml
 ```
 This will install `poetry` as well as the dependencies that are not installable with `poetry` in the new environment called `fire-forecast` (Further packages will then be managed by poetry in this environment).
 
