@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import yaml
 from torch.utils.data import DataLoader
@@ -169,6 +170,13 @@ class Iterator:
             self._config["data"]["variables"] = (
                 np.char.decode(self.train_dataset.data_variables).astype(str).tolist()
             )
+        if self._config["model"]["model_args"]["final_activation"] == nn.ReLU:
+            self._config["model"]["model_args"]["final_activation"] = "ReLU"
+        if self._config["model"]["model_args"]["activation"] == nn.ReLU:
+            self._config["model"]["model_args"]["activation"] = "ReLU"
+        elif self._config["model"]["model_args"]["activation"] == nn.LeakyReLU:
+            self._config["model"]["model_args"]["activation"] = "LeakyReLU"
+
         with open(self._output_path / "config.yaml", "w") as file:
             yaml.dump(self._config, file, default_flow_style=False, explicit_start=True)
 
