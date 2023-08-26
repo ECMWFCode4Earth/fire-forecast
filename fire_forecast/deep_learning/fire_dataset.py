@@ -53,11 +53,12 @@ class FireDataset(Dataset):
         with h5py.File(self._data_path, "r") as file:
             data = file["training_set"][:]
             data_variables = file["variable_selection"][:]
-        labels = data[:, 0:2, 24:, 1, 1]
-        fire_features = data[:, 0:2, :24, :, :]
-        meteo_features = data[:, 2:, :, :, :]
-        # select only central pixel
         # labels = data[:, 0:2, 24:, 1, 1]
+        # fire_features = data[:, 0:2, :24, :, :]
+        # meteo_features = data[:, 2:, :, :, :]
+        # select only central pixel
+        labels = data[:, 0:2, 24:, 1, 1]
         # fire_features = data[:, 0:2, :24, 1:2, 1:2]
-        # meteo_features = data[:, 2:, :, 1:2, 1:2]
+        fire_features = data[:, 0:2, :24, 1:2, 1:2]
+        meteo_features = data[:, 2:, 24:, 1:2, 1:2]
         return fire_features, meteo_features, labels, data_variables

@@ -85,7 +85,6 @@ class Iterator:
         """
         self.model.train()
         fire_features, meteo_features, labels = data
-        self._optimizer.zero_grad()
         features = torch.from_numpy(flatten_features(fire_features, meteo_features)).to(
             self.device
         )
@@ -96,6 +95,7 @@ class Iterator:
         loss = self.criterion(predictions, target_values, weights)
         loss.backward()
         self._optimizer.step()
+        self._optimizer.zero_grad()
         batch_tqdm.set_postfix({"loss": loss.item()})
 
     def _validate(self, epoch_tqdm: tqdm):
