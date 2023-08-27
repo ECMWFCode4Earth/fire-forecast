@@ -1,0 +1,33 @@
+training:
+    learning_rate: 0.001
+    learning_rate_development:
+        type: exponential # or exponential (decrease by factor every time)
+        amount: 0.99 # if linear, decrease by this amount every time if exponential, decrease by this factor every time
+    batch_size: 128
+    epochs: 200
+    optimizer_name: Adam
+    optimizer_args: {} # will take learning rate from above
+    loss_function: WeightedL1Loss    
+
+output:
+    path: /home/chlw/data/test # where to save the model
+    checkpoint_interval: 15 # save a checkpoint every 15 epochs
+
+data:
+    train_path: /data/deep_learning_data/hdf_files/longtimes_2023-07-28/train.hdf
+    test_path: /data/deep_learning_data/hdf_files/longtimes_2023-07-28/test.hdf
+    validation_path: /data/deep_learning_data/hdf_files/longtimes_2023-07-28/validation.hdf
+    variables: null # is filled automatically by the iterator
+
+model:
+    name: FullyConnectedForecaster
+    model_args: 
+        input_size: 1296
+        output_size: 24
+        hidden_layer_sizes: [512, 256, 128, 128 ,128, 64, 32]
+        dropout: 0.05
+        batch_norm: false
+        activation: LeakyReLU
+        final_activation: ReLU
+    checkpoint_path: "/home/chlw/data/test/checkpoint_0.pt" # if you want to load a checkpoint
+
