@@ -177,7 +177,9 @@ class ResidualNetwork(nn.Module):
                 if final_activation is not None:
                     self.layers.append(final_activation())
             if batch_norm and not n_out == output_size and not n_in == input_size:
-                self.layers.append(nn.BatchNorm1d(n_out))
+                self.layers.append(
+                    nn.BatchNorm1d(n_out if isinstance(n_out, int) else n_out[-1])
+                )
             if dropout > 0.0 and not n_out == output_size:
                 self.layers.append(nn.Dropout(dropout))
 
