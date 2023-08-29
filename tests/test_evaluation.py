@@ -33,5 +33,7 @@ def test_models():
     predictions = evaluation.predict(models, X)
     for model, pred in predictions.items():
         assert pred.shape == y.shape
-    compare = evaluation.evaluate_models(models, X, y)
-    compare = evaluation.evaluate_models(models, X, y, weights)
+    evaluation.evaluate_models(models, X, y)
+    evaluation.evaluate_models(models, X, y, weights=weights)
+    predictions = {"model1": y, "model2": y + 1}
+    evaluation.evaluate_models(models, X, y, predictions)

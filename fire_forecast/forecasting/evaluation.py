@@ -154,7 +154,7 @@ def predict(models, X):
     return y_pred
 
 
-def evaluate_models(models, X, y_true, weights=None):
+def evaluate_models(models, X, y_true, predictions=None, weights=None):
     """
     Compares the predictions of the given models to the true values.
 
@@ -162,6 +162,7 @@ def evaluate_models(models, X, y_true, weights=None):
         models: A dictionary containing the trained models.
         X: An array-like object containing the features.
         y_true: An array-like object containing the true values.
+        predictions: A dictionary containing the predictions.
         weights: An array-like object containing the weights for each sample.
 
     Returns:
@@ -176,5 +177,11 @@ def evaluate_models(models, X, y_true, weights=None):
         }
         for name in models.keys()
     }
+    if predictions is not None:
+        for name, pred in predictions.items():
+            metrics[name] = {}
+            metrics[name]["mae"] = mae(y_true, pred, weights)
+            metrics[name]["rmse"] = rmse(y_true, pred, weights)
+            metrics[name]["correlation"] = correlation(y_true, pred)
     df = pd.DataFrame(metrics).T
     return df
