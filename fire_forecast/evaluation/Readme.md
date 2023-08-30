@@ -61,30 +61,54 @@ This function compares the predictions of the given models to the true values. I
 ## Example
 
 ```python
-from forecasting import evaluation
+from fire_forecast.deep_learning import Iterator
+from fire_forecast.forecasting import evaluation
+
+# Iterator from deep_learning module
+iterator: Iterator = ...
+
+
+# Training
+
+fire_features, meteo_features, labels = iterator.train_dataset[:]
+features = flatten_features(fire_features, meteo_features)
+target_values, weights = flatten_labels_and_weights(labels)
 
 # The training features with shape (n_samples, n_features)
-X: np.array = ...
+X: np.array = features
 # The training targets with shape (n_samples, n_targets)
-y: np.array = ...
+y: np.array = target_values
 
 models = evaluation.train_models(X, y)
 
+# Testing
+
+fire_features, meteo_features, labels = iterator.test_dataset[:]
+features = flatten_features(fire_features, meteo_features)
+target_values, weights = flatten_labels_and_weights(labels)
+
+with torch.no_grad():
+    predictions = self.model(torch.from_numpy(features))
+    predictions = predictions.numpy()
+
 # The test features with shape (n_samples, n_features)
-X_test: np.array = ...
+X_test: np.array = features
 # The test targets with shape (n_samples, n_targets)
-y_test: np.array = ...
+y_test: np.array = target_values
 # The predictions of other models as a dictionary of model name to y_pred with shape (n_samples, n_targets)
-predictions: dict = ...
+predictions: dict = {
+    "NN": predictions,
+    "Persistence": fire_features,
+}
 # The weights of the labels as np.array with shape (n_samples, n_targets)
-weights_test: np.array = ...
+weights_test: np.array = weights
 
 metrics = evaluation.evaluate_models(
     models=models,
     X=X_test,
     y=y_test,
     predictions=predictions,
-    weights=weights_test
+    weights=weights_test,
 )
 
 metrics.head()
