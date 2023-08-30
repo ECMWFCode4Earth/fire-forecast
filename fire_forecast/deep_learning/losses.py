@@ -22,6 +22,8 @@ def load_loss_by_name(loss_name: str) -> nn.Module:
         return WeightedL1RootLoss()
     elif loss_name == "L1Loss":
         return L1Loss()
+    elif loss_name == "WeightedL2Loss":
+        return WeightedL2Loss()
     else:
         raise ValueError(f"Loss function {loss_name} not supported.")
 
@@ -130,4 +132,27 @@ class L1Loss(nn.Module):
             torch.Tensor: Loss value.
         """
         loss = torch.abs((predictions - labels)).sum()
+        return loss
+
+
+class WeightedL2Loss(nn.Module):
+    """Loss function for weighted MSE loss."""
+
+    def __init__(self):
+        super(WeightedL2Loss, self).__init__()
+
+    def forward(
+        self, predictions: torch.Tensor, labels: torch.Tensor, weights: torch.Tensor
+    ) -> torch.Tensor:
+        """Forward pass of the loss function.
+
+        Args:
+            predictions (torch.Tensor): Predictions of the model.
+            labels (torch.Tensor): Labels of the data.
+            weights (torch.Tensor): Weights of the labels.
+
+        Returns:
+            torch.Tensor: Loss value.
+        """
+        loss = ((predictions - labels) ** 2 * weights).sum()
         return loss

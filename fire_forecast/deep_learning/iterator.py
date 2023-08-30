@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import yaml
+from loguru import logger
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -26,28 +27,31 @@ class Iterator:
         """
         self._config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.criterion = load_loss_by_name(config["training"]["loss_function"])
-        self.train_dataset = FireDataset(config["data"]["train_path"])
-        self.validation_dataset = FireDataset(config["data"]["validation_path"])
-        self.test_dataset = FireDataset(config["data"]["test_path"])
-        self.model = load_model_from_config(config["model"])
-        self._learning_rate = config["training"]["learning_rate"]
-        self._optimizer = self._get_optimizer_from_config(config["training"])
+        self.criterion = load_loss_by_name(self._config["training"]["loss_function"])
+        self.train_dataset = FireDataset(self._config["data"]["train_path"])
+        self.validation_dataset = FireDataset(self._config["data"]["validation_path"])
+        self.test_dataset = FireDataset(self._config["data"]["test_path"])
+        self._initialize_feature_normalization()
+        self.model = load_model_from_config(self._config["model"])
+        self._learning_rate = self._config["training"]["learning_rate"]
+        self._optimizer = self._get_optimizer_from_config(self._config["training"])
         self.train_dataloader = DataLoader(
             self.train_dataset,
-            batch_size=config["training"]["batch_size"],
+            batch_size=self._config["training"]["batch_size"],
             shuffle=True,
         )
         self.validation_dataloader = DataLoader(
             self.validation_dataset,
-            batch_size=config["training"]["batch_size"],
+            batch_size=self._config["training"]["batch_size"],
             shuffle=True,
         )
         self.test_dataloader = DataLoader(
-            self.test_dataset, batch_size=config["training"]["batch_size"], shuffle=True
+            self.test_dataset,
+            batch_size=self._config["training"]["batch_size"],
+            shuffle=True,
         )
-        self._output_path = Path(config["output"]["path"])
-        self._checkpoint_interval = config["output"]["checkpoint_interval"]
+        self._output_path = Path(self._config["output"]["path"])
+        self._checkpoint_interval = self._config["output"]["checkpoint_interval"]
 
         self.epoch = 0
 
@@ -149,6 +153,34 @@ class Iterator:
                 f"Unknown learning rate development type:"
                 f"{self._config['training']['learning_rate_development']['type']}"
             )
+
+    def _initialize_feature_normalization(self):
+        """Initialize the feature normalization."""
+        try:
+            if self._config["model"]["model_args"]["feature_normalization"]:
+                try:
+                    if (
+                        self._config["model"]["model_args"]["mean"] is not None
+                        or self._config["model"]["model_args"]["std"] is not None
+                    ):
+                        return
+                except KeyError:
+                    pass
+                logger.info("Initializing feature normalization.")
+                total_train_dataset = []
+                for data in self.train_dataset:
+                    fire_features, meteo_features, labels = data
+                    total_train_dataset.append(
+                        flatten_features(fire_features, meteo_features)
+                    )
+                total_train_dataset = np.array(total_train_dataset)
+                feature_means = total_train_dataset.mean(axis=0)
+                feature_stds = total_train_dataset.std(axis=0)
+
+                self._config["model"]["model_args"]["mean"] = feature_means.tolist()
+                self._config["model"]["model_args"]["std"] = feature_stds.tolist()
+        except KeyError:
+            pass
 
     def _initialize_validation_loss_file(self):
         """Initialize the validation loss file."""

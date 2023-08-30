@@ -41,6 +41,46 @@ def load_model_from_config(model_config: dict) -> nn.Module:
     return model
 
 
+# Costum sub-modules
+
+
+class FeatureWiseNormalization(nn.Module):
+    def __init__(self, mean, std):
+        super(FeatureWiseNormalization, self).__init__()
+        self.mean = nn.Parameter(torch.tensor(mean), requires_grad=False)
+        self.std = nn.Parameter(torch.tensor(std), requires_grad=False)
+
+    def forward(self, x):
+        normalized_x = (x - self.mean) / self.std
+        return normalized_x
+
+
+class ResidualBlock(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        internal_layers: list[int],
+        activation: nn.Module = nn.ReLU,
+    ):
+        super(ResidualBlock, self).__init__()
+        self.layers = []
+
+        n_input_nodes = [input_size] + list(internal_layers)
+        n_output_nodes = list(internal_layers) + [input_size]
+        for i, (n_in, n_out) in enumerate(zip(n_input_nodes, n_output_nodes)):
+            self.layers.append(nn.Linear(n_in, n_out))
+            if not i == len(n_input_nodes) - 1:
+                self.layers.append(activation())
+
+        self.model = nn.Sequential(*self.layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x) + x
+
+
+# Models
+
+
 class FullyConnectedForecaster(nn.Module):
     """Simple fully connected neural network for fire forecast."""
 
@@ -55,6 +95,9 @@ class FullyConnectedForecaster(nn.Module):
         batch_norm: bool = False,
         attention: bool = False,
         num_heads: int = 2,
+        feature_normalization: bool = False,
+        mean=None,
+        std=None,
     ):
         """Initialize the fully connected forecaster.
 
@@ -76,6 +119,9 @@ class FullyConnectedForecaster(nn.Module):
         self.layers = []
         n_input_nodes = [input_size] + list(hidden_layer_sizes)
         n_output_nodes = list(hidden_layer_sizes) + [output_size]
+
+        if feature_normalization and mean is not None and std is not None:
+            self.layers.append(FeatureWiseNormalization(mean, std))
 
         if self.attention:
             self.attention_layer = nn.MultiheadAttention(input_size, num_heads)
@@ -114,29 +160,6 @@ class FullyConnectedForecaster(nn.Module):
         return self.model(x)
 
 
-class ResidualBlock(nn.Module):
-    def __init__(
-        self,
-        input_size: int,
-        internal_layers: list[int],
-        activation: nn.Module = nn.ReLU,
-    ):
-        super(ResidualBlock, self).__init__()
-        self.layers = []
-
-        n_input_nodes = [input_size] + list(internal_layers)
-        n_output_nodes = list(internal_layers) + [input_size]
-        for i, (n_in, n_out) in enumerate(zip(n_input_nodes, n_output_nodes)):
-            self.layers.append(nn.Linear(n_in, n_out))
-            if not i == len(n_input_nodes) - 1:
-                self.layers.append(activation())
-
-        self.model = nn.Sequential(*self.layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.model(x) + x
-
-
 class ResidualNetwork(nn.Module):
     """Residual network."""
 
@@ -151,6 +174,9 @@ class ResidualNetwork(nn.Module):
         batch_norm: bool = False,
         attention: bool = False,
         num_heads: int = 2,
+        feature_normalization: bool = False,
+        mean=None,
+        std=None,
     ):
         super(ResidualNetwork, self).__init__()
         self.layers = []
@@ -158,6 +184,9 @@ class ResidualNetwork(nn.Module):
 
         n_input_nodes = [input_size] + list(hidden_layer_sizes)
         n_output_nodes = list(hidden_layer_sizes) + [output_size]
+
+        if feature_normalization and mean is not None and std is not None:
+            self.layers.append(FeatureWiseNormalization(mean, std))
 
         if self.attention:
             self.attention_layer = nn.MultiheadAttention(input_size, num_heads)
