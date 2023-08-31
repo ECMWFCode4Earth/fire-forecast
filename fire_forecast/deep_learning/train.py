@@ -24,6 +24,7 @@ def main():
     logger.info(f"Config: {config}")
     logger.info("Initializing model from config.")
     iterator = Iterator(config)
+    logger.info(f"Model initialized.\nModel: {iterator.model}")
     logger.info("Starting training.")
     iterator.train()
 

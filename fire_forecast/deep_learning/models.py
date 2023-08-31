@@ -78,6 +78,24 @@ class ResidualBlock(nn.Module):
         return self.model(x) + x
 
 
+class AttentionLayer(nn.Module):
+    def __init__(self, input_size: int, num_heads: int = 2):
+        super(AttentionLayer, self).__init__()
+        self.attention_layer = nn.MultiheadAttention(input_size, num_heads)
+        self.model = self.attention_layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        original_shape = x.shape
+        if len(original_shape) == 1:
+            x = x.unsqueeze(0)
+        y, _ = self.attention_layer(x, x, x)
+        # x = torch.concat((x, y), dim=1)
+        x = x + y
+        if len(original_shape) == 1:
+            x = x.squeeze(0)
+        return x
+
+
 # Models
 
 
@@ -124,8 +142,8 @@ class FullyConnectedForecaster(nn.Module):
             self.layers.append(FeatureWiseNormalization(mean, std))
 
         if self.attention:
-            self.attention_layer = nn.MultiheadAttention(input_size, num_heads)
-            n_input_nodes[0] = 2 * input_size
+            self.layers.append(AttentionLayer(input_size, num_heads))
+
         for n_in, n_out in zip(n_input_nodes, n_output_nodes):
             self.layers.append(nn.Linear(n_in, n_out))
             if not n_out == output_size:
@@ -149,14 +167,6 @@ class FullyConnectedForecaster(nn.Module):
         Returns:
             torch.Tensor: Output of the model.
         """
-        if self.attention:
-            original_shape = x.shape
-            if len(original_shape) == 1:
-                x = x.unsqueeze(0)
-            y, _ = self.attention_layer(x, x, x)
-            x = torch.concat((x, y), dim=1)
-            if len(original_shape) == 1:
-                x = x.squeeze(0)
         return self.model(x)
 
 
@@ -189,7 +199,7 @@ class ResidualNetwork(nn.Module):
             self.layers.append(FeatureWiseNormalization(mean, std))
 
         if self.attention:
-            self.attention_layer = nn.MultiheadAttention(input_size, num_heads)
+            self.layers.append(AttentionLayer(input_size, num_heads))
             # n_input_nodes[0] = 2*input_size
 
         for n_in, n_out in zip(n_input_nodes, n_output_nodes):
@@ -215,13 +225,4 @@ class ResidualNetwork(nn.Module):
         self.model = nn.Sequential(*self.layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.attention:
-            original_shape = x.shape
-            if len(original_shape) == 1:
-                x = x.unsqueeze(0)
-            y, _ = self.attention_layer(x, x, x)
-            # x = torch.concat((x, y), dim=1)
-            x = x * y
-            if len(original_shape) == 1:
-                x = x.squeeze(0)
         return self.model(x)
