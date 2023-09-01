@@ -1,7 +1,7 @@
 # fire-forecast
 Tool for forecast of fire radiative power.
 
-## Contribution
+## Installation
 ### 1. Clone the repository with:
 ```
 git clone git@github.com:ECMWFCode4Earth/fire-forecast.git
@@ -46,7 +46,7 @@ pre-commit install
 The `fire_forecast` module is subdivided into three main parts:
  1. `fire_forecast.data_preparation` for preprocessing data into various forms
  2. `fire_forecast.deep_learning` for creating, training and loading deep learning models
- 3. `fire_forecast.fire_model` for classical machine learnign approaches
+ 3. #TODO: fill here for classical machine learnign approaches
 In the following we will give a short overview of the different parts and how to use them.
 
 All scripts can be called with python -m fire_forecast.module_name.script_name -h to get a help message.
@@ -185,6 +185,5 @@ fire_features, meteo_features, labels = dataset[0] #Get the first item of the da
 input_features_in_correct_shape = flatten_features(fire_features, meteo_features) #Put the features into the correct shape
 prediction = model(input_features_in_correct_shape) #Predict with the model
 ```
-
 
 
