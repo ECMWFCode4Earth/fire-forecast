@@ -1,34 +1,41 @@
 training:
-    learning_rate: 0.001
+    learning_rate: 0.0005
     learning_rate_development:
         type: exponential # or exponential (decrease by factor every time)
         amount: 0.99 # if linear, decrease by this amount every time if exponential, decrease by this factor every time
     batch_size: 128
-    epochs: 50
+    epochs: 2
     optimizer_name: Adam
     optimizer_args: {} # will take learning rate from above
     loss_function: WeightedL1RootLoss    
 
+############################################
+# Fill in the following values
 output:
     path: /data/runs/test3 # where to save the model
-    checkpoint_interval: 5 # save a checkpoint every 15 epochs
+    checkpoint_interval: 1 # save a checkpoint every 15 epochs
 
 data:
     train_path: /data/deep_learning_data/GFAS_all_data/no_shift/train.hdf
     test_path: /data/deep_learning_data/GFAS_all_data/no_shift/test.hdf
     validation_path: /data/deep_learning_data/GFAS_all_data/no_shift/validation.hdf
     variables: null # is filled automatically by the iterator
-
+############################################
 model:
     name: ResidualNetwork
     model_args: 
-        input_size: 3024
-        output_size: 24
-        hidden_layer_sizes: [2048, 1024, [1024, 1024]]
-        dropout: 0
-        batch_norm: false
-        activation: LeakyReLU
-        final_activation: ReLU
+        ############################################
+        # Fill in the fitting size for your data
+        input_size: 128
+        ############################################
+        output_size: 24 # number of output variables (usually 24)
+        hidden_layer_sizes: [128, 256, [256, 256]] # list of hidden layer sizes, if you want to use residual connections, use a list of lists
+        dropout: 0 # dropout probability
+        batch_norm: false # whether to use batch normalization or not
+        attention: true # whether to use an attention layer or not
+        feature_normalization: true # whether to normalize the input features HIGHLY RECOMMENDED
+        activation: LeakyReLU # or ReLU
+        final_activation: null # it is recommended to use null here
 
-    checkpoint_path: null #/home/tm/Data/test/checkpoint_30.pt #null # if you want to load a checkpoint
+    checkpoint_path: null # if you want to load a checkpoint enter path here
 
