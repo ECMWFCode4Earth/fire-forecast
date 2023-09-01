@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import torch
@@ -28,9 +29,9 @@ class Iterator:
         self._config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.criterion = load_loss_by_name(self._config["training"]["loss_function"])
-        self.train_dataset = FireDataset(self._config["data"]["train_path"])
-        self.validation_dataset = FireDataset(self._config["data"]["validation_path"])
-        self.test_dataset = FireDataset(self._config["data"]["test_path"])
+        self.train_dataset = self._get_dataset("train")
+        self.validation_dataset = self._get_dataset("validation")
+        self.test_dataset = self._get_dataset("test")
         self._initialize_feature_normalization()
         self.model = load_model_from_config(self._config["model"])
         self._learning_rate = self._config["training"]["learning_rate"]
@@ -186,6 +187,27 @@ class Iterator:
         """Initialize the validation loss file."""
         with open(self._output_path / "validation_loss.txt", "w") as file:
             file.write("epoch,validation_loss\n")
+
+    def _get_dataset(
+        self, set_type: Literal["train", "test", "validation"], only_center: bool = True
+    ):
+        """Get a dataset.
+
+        Args:
+            set_type (Literal["train", "test", "validation"]): Type of the dataset.
+            only_center (bool, optional): Whether to only use the central pixel of the
+                fire features and meteo features. Defaults to True.
+
+        Returns:
+            FireDataset: Dataset.
+        """
+        dataset_path = self._config["data"][f"{set_type}_path"]
+        try:
+            if self._config["data"]["only_center"] is not None:
+                only_center = self._config["data"]["only_center"]
+        except KeyError:
+            pass
+        return FireDataset(dataset_path, only_center)
 
     def _log_validation_loss(self, validation_loss: torch.Tensor):
         """Log the validation loss to a file.

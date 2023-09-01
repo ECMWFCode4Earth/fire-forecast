@@ -14,12 +14,15 @@ from fire_forecast.deep_learning.utils import (
 class FireDataset(Dataset):
     """Dataset for fire forecast data."""
 
-    def __init__(self, data_path: Union[str, Path]) -> None:
+    def __init__(self, data_path: Union[str, Path], only_center: bool = True) -> None:
         """Initialize the dataset.
 
         Args:
             data_path (Union[str, Path]): Path to the data file.
+            only_center (bool, optional): Whether to only use the central pixel of the
+                fire features and meteo features. Defaults to True.
         """
+        self.only_center = only_center
         self._data_path = Path(data_path)
         (
             self.fire_features,
@@ -53,12 +56,12 @@ class FireDataset(Dataset):
         with h5py.File(self._data_path, "r") as file:
             data = file["training_set"][:]
             data_variables = file["variable_selection"][:]
-        # labels = data[:, 0:2, 24:, 1, 1]
-        # fire_features = data[:, 0:2, :24, :, :]
-        # meteo_features = data[:, 2:, :, :, :]
-        # select only central pixel
+        if self.only_center:
+            fire_features = data[:, 0:2, :24, 1:2, 1:2]
+            meteo_features = data[:, 2:, :, 1:2, 1:2]
+        else:
+            fire_features = data[:, 0:2, :24, :, :]
+            meteo_features = data[:, 2:, :, :, :]
+
         labels = data[:, 0:2, 24:, 1, 1]
-        # fire_features = data[:, 0:2, :24, 1:2, 1:2]
-        fire_features = data[:, 0:2, :24, 1:2, 1:2]
-        meteo_features = data[:, 2:, 24:, 1:2, 1:2]
         return fire_features, meteo_features, labels, data_variables
