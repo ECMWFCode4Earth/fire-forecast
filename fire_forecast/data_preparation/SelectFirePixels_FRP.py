@@ -7,7 +7,7 @@ import argparse
 
 # Argument Parser
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Script to preprocess GFAS and Meteo Data for machine learning, run script e.g. with ")
+    parser = argparse.ArgumentParser(description="Script to preprocess GFAS and Meteo Data for machine learning, run script e.g. with python SelectFirePixels_FRP.py <outputpath> --i <inputdatapath1> <inputdatapath2> <inputdatapath3>")
     parser.add_argument("OutputPath", type=str, help="Enter FilePath to save output")
     parser.add_argument("--i","-InputPathList", nargs='+', default=[], help="Enter filepaths to inputdata (.nc fomat), needs at least a GFAS dataset with frpfire and offire variable")
     args = parser.parse_args()
