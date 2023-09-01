@@ -186,4 +186,20 @@ input_features_in_correct_shape = flatten_features(fire_features, meteo_features
 prediction = model(input_features_in_correct_shape) #Predict with the model
 ```
 
+#### 2.5 Predicting with multiple models
+To predict with multiple models, you can use the `Ensemble` class of `fire_forecast.deep_learning.ensemble`:
+```
+from fire_forecast.deep_learning.ensemble import Ensemble
+from fire_forecast.deep_learning.fire_dataset import FireDataset
 
+configs = [
+    "path/to/config1.yaml",
+    "path/to/config2.yaml",
+    "path/to/config3.yaml",
+]
+ensemble = Ensemble(configs) #Load the ensemble of models
+dataset = FireDataset("path/to/dataset.hdf", only_center=True) #Load the dataset
+
+fire_features, meteo_features, labels = dataset[0] #Get the first item of the dataset
+ensemble_mean, ensemble_std = ensemble.predict(fire_features, meteo_features) #Predict with the ensemble
+```
