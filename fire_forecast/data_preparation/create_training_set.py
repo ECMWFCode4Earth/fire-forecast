@@ -67,6 +67,7 @@ def main():
     if input_path.is_dir():
         dataset = xr.open_mfdataset(
             input_path.glob(f"{args.filename_start}*.nc"),
+            chunks=96,
             concat_dim="sample",
             combine="nested",
         ).compute()

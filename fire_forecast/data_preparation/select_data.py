@@ -32,8 +32,8 @@ if __name__ == "__main__":
         [args.era5_path, args.era5_sfc_path, args.gfas_path]
     )
 
-    full_dataset["total_frpfire"] = full_dataset.frpfire.sum("ident")
-    full_dataset["total_offire"] = full_dataset.offire.sum("ident")
+    full_dataset["total_frpfire"] = full_dataset.frpfire
+    full_dataset["total_offire"] = full_dataset.offire
 
     dataselector = DataSelector(
         full_dataset, args.latitude_window_size, args.longitude_window_size

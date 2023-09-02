@@ -1,8 +1,10 @@
 """
-Supply a fire model that creates fire time series data. 
+Supply a fire model that creates fire time series data.
 
 The idea is that the forecasting algorithms can be trained on the synthetic data.
 """
+
+import numpy as np
 
 # Constants for the fire model
 AMPLITUDE_DIURNAL_CYCLE = 5
@@ -15,10 +17,6 @@ FIRE_SCALE = 1 / 150
 FIRE_HUMIDITY_IMPACT = 0.4
 FIRE_FORCING = 0.6
 FIRE_CUTOFF = 0.01
-
-
-import numpy as np
-import xarray as xr
 
 
 def create_temperature_timeseries(
@@ -73,8 +71,8 @@ def create_humidity_timeseries(
         timeseries_length (int): The length of the time series
         rng (np.random.Generator, optional): The random number generator used by
             the function. If not specified, a new generator is created.
-        seed (int, optional): The seed for the random number generator. Only used if rng is not
-            specified.
+        seed (int, optional): The seed for the random number generator. Only used if rng
+            is not specified.
 
     Returns:
         ndarray: The time series of the humidity
@@ -117,8 +115,8 @@ def create_timeseries_fire(
             value between 0 and 1000 is used.
         temperature_timeseries (ndarray, optional): The temperature time series. If not
             specified, a new time series is created.
-        humidity_timeseries (ndarray, optional): The humidity time series. If not specified, a
-            new time series is created.
+        humidity_timeseries (ndarray, optional): The humidity time series. If not
+            specified, a new time series is created.
         rng (np.random.Generator, optional): The random number generator
             used by the function. If not specified, a new generator is created.
         seed (int, optional): The seed for the random number generator.

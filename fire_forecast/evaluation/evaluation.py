@@ -1,15 +1,9 @@
 import numpy as np
-import xarray as xr
-import matplotlib.pyplot as plt
-from pathlib import Path
 import pandas as pd
-
 from sklearn.linear_model import LinearRegression, Ridge
-from sklearn import svm
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
 
 
 def _check_dims(y_true, y_pred, weights=None):
@@ -23,7 +17,7 @@ def _check_dims(y_true, y_pred, weights=None):
         if weights.ndim == 1:
             weights = weights.reshape((1, -1))
     else:
-        weights = np.ones(y_true.shape)    
+        weights = np.ones(y_true.shape)
     return y_true, y_pred, weights
 
 
@@ -35,7 +29,8 @@ def mae(y_true, y_pred, weights=None, keepdims=False):
         y_true: An array-like object containing the true values.
         y_pred: An array-like object containing the predicted values.
         weights: An array-like object containing the weights for each sample.
-        keepdims: A boolean indicating whether to keep the dimensions of the target variable.
+        keepdims: A boolean indicating whether to keep the dimensions of the target
+            variable.
             If True, the output will have the same dimensions as the target variable.
             If False, the output will be a scalar value.
 
@@ -59,10 +54,11 @@ def rmse(y_true, y_pred, weights=None, keepdims=False):
         y_true: An array-like object containing the true values.
         y_pred: An array-like object containing the predicted values.
         weights: An array-like object containing the weights for each sample.
-        keepdims: A boolean indicating whether to keep the dimensions of the target variable.
+        keepdims: A boolean indicating whether to keep the dimensions of the target
+            variable.
             If True, the output will have the same dimensions as the target variable.
-            If False, the output will be a scalar value like sklearn.metrics.mean_squared_error
-            with squared=False.
+            If False, the output will be a scalar value like sklearn.metrics.
+            mean_squared_error with squared=False.
 
     Returns:
         The root mean squared error between the true and predicted values.
@@ -83,7 +79,8 @@ def correlation(y_true, y_pred, keepdims=False):
     Args:
         y_true: An array-like object containing the true values.
         y_pred: An array-like object containing the predicted values.
-        keepdims: A boolean indicating whether to keep the dimensions of the target variable.
+        keepdims: A boolean indicating whether to keep the dimensions of the target
+            variable.
             If True, the output will have the same dimensions as the target variable.
             If False, the output will be a scalar value.
     """
@@ -129,7 +126,9 @@ def train_models(X, y):
         #     ]
         # ),
         "tree": DecisionTreeRegressor(
-            max_depth=3, min_samples_split=3, min_samples_leaf=10, 
+            max_depth=3,
+            min_samples_split=3,
+            min_samples_leaf=10,
         ),
     }
     for name, model in models.items():

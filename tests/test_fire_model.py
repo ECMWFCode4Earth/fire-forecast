@@ -1,6 +1,5 @@
 import numpy as np
 
-
 from fire_forecast import fire_model as fm
 
 

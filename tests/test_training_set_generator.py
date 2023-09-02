@@ -10,7 +10,7 @@ FILE_EXAMPLES = Path(__file__).parent / "file_examples"
 
 @pytest.fixture
 def dataset():
-    return xr.open_dataset(FILE_EXAMPLES / "postprocessed_data.nc")
+    return xr.open_dataset(FILE_EXAMPLES / "postprocessed_data_no_ident.nc")
 
 
 @pytest.fixture
