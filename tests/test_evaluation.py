@@ -1,6 +1,7 @@
 import numpy as np
-from fire_forecast.forecasting import evaluation
 from sklearn.metrics import mean_squared_error
+
+from fire_forecast.evaluation import evaluation
 
 
 def test_mae():
@@ -9,6 +10,7 @@ def test_mae():
     expected_mae = np.mean(np.abs(y_true - y_pred))
     assert np.allclose(evaluation.mae(y_true, y_pred), expected_mae)
     assert evaluation.mae(y_true, y_pred, keepdims=True).shape == (2,)
+
 
 def test_rmse():
     y_true = np.arange(20).reshape(10, 2)
@@ -27,7 +29,7 @@ def test_correlation():
 
 def test_models():
     X = np.arange(20).reshape(10, 2)
-    y = X @ np.array([1,2]) + 1
+    y = X @ np.array([1, 2]) + 1
     weights = np.ones(y.shape)
     models = evaluation.train_models(X, y)
     predictions = evaluation.predict(models, X)
