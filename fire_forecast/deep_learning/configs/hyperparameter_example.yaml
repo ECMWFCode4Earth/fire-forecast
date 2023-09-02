@@ -1,0 +1,12 @@
+base_config_path: /home/chlw/software/repositories/fire-forecast/fire_forecast/deep_learning/configs/example0.yaml
+output_directory: /data/runs/test
+
+training:
+    learning_rate: [0.01, 0.001]
+
+model:
+    model_args:
+        batch_norm: [true, false]
+        dropout: [0, 0.05]
+        
+

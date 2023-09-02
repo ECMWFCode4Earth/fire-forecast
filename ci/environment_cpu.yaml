@@ -1,8 +1,12 @@
 name: fire-forecast
 channels:
   - conda-forge
+  - pytorch
 dependencies:
   - "python>=3.10.0,<3.12"
   - netcdf4
   - poetry
-  - pytorch
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pytorch::cpuonly
