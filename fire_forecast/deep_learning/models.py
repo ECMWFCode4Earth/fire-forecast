@@ -169,6 +169,10 @@ class FullyConnectedForecaster(nn.Module):
         """
         return self.model(x)
 
+    @property
+    def device(self):
+        return next(self.parameters()).device
+
 
 class ResidualNetwork(nn.Module):
     """Residual network."""
@@ -226,3 +230,7 @@ class ResidualNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
