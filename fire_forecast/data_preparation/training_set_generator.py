@@ -46,14 +46,13 @@ class TrainingSetGenerator:
         variable_selection = ["frpfire", "offire"]
         variable_selection.extend(meteo_variables.copy())
         dataset = self.dataset[variable_selection]
-        satellite_subsets = []
-        #for satiellite_index in dataset.ident.values:
+        # for satiellite_index in dataset.ident.values:
         satellite_dataset = dataset.where(
             (
                 dataset.frpfire.isel(
                     longitude_pixel=1, latitude_pixel=1, time_index=slice(0, 24)
                 )
-                > 0.05
+                > 0
             ).sum("time_index")
             >= fire_threshold_first_day,
             drop=True,
@@ -113,8 +112,8 @@ class TrainingSetGenerator:
                         drop=True,
                     )
 
-        #satellite_subsets.append(satellite_dataset)
-        dataset = satellite_dataset #xr.concat(satellite_subsets, dim="sample")
+        # satellite_subsets.append(satellite_dataset)
+        dataset = satellite_dataset  # xr.concat(satellite_subsets, dim="sample")
         dataarrays = []
         for data_variable in variable_selection:
             dataarrays.append(dataset[data_variable].values)
