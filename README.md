@@ -308,7 +308,7 @@ features = flatten_features(fire_features, meteo_features)
 target_values, weights = flatten_labels_and_weights(labels)
 
 with torch.no_grad():
-    predictions = self.model(torch.from_numpy(features))
+    predictions = model(torch.from_numpy(features))
     predictions = predictions.numpy()
 
 # The test features with shape (n_samples, n_features)
