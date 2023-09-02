@@ -1,5 +1,5 @@
-base_config_path: /home/chlw/software/repositories/fire-forecast/fire_forecast/deep_learning/configs/example0.yaml
-output_directory: /data/runs/test
+base_config_path: /home/chlw/software/repositories/fire-forecast/fire_forecast/deep_learning/configs/example0.yaml # path to the base config file to modify with given parameters
+output_directory: /data/runs/test # output directory for the training results
 
 training:
     learning_rate: [0.01, 0.001]
