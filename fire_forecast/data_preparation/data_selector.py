@@ -1,9 +1,10 @@
+import time
 import warnings
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 import xarray as xr
+from loguru import logger
 from tqdm.auto import tqdm
 
 
@@ -398,16 +399,25 @@ class DataCutter:
         Returns:
             xr.Dataset: The cut data.
         """
+        # get time for logging:
+        tic = time.time()
         days_with_enough_data = self._get_days_with_enough_data(
             fire_threshold=fire_threshold,
             measurement_threshold=measurement_threshold,
         )
+        toc = time.time()
+        logger.info(f"Time to get days with enough data: {toc-tic:.2f} seconds")
+        tic = time.time()
         sample_coordinates = self._extract_sample_coordinates(days_with_enough_data)
-
+        toc = time.time()
+        logger.info(f"Time to extract sample coordinates: {toc-tic:.2f} seconds")
+        tic = time.time()
         filtered_data = self.data.sel(
             sample=sample_coordinates.sample.astype(int),
             time_index=sample_coordinates.time_index.astype(int),
         )
+        toc = time.time()
+        logger.info(f"Time to filter data: {toc-tic:.2f} seconds")
         filtered_data = filtered_data.rename(
             new_sample="sample", new_time_index="time_index"
         )
@@ -430,59 +440,61 @@ class DataCutter:
         Returns:
             xr.DataArray: A boolean array indicating whether a day has enough data.
         """
+
         center_pixel_data = self.data.isel(
             latitude_pixel=len(self.data.latitude_pixel) // 2,
             longitude_pixel=len(self.data.longitude_pixel) // 2,
         ).compute()
-        days_with_enough_data_collection = []
-        for sample in tqdm(
-            center_pixel_data.sample.values, desc="Collecting days with enough data"
-        ):
-            center_pixel_sample = center_pixel_data.sel(sample=sample)
-            center_pixel_sample = center_pixel_sample.assign_coords(
-                time_index=center_pixel_sample.time.values
-            )
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                fire_values_per_day: xr.DataArray = (
-                    (center_pixel_sample.total_frpfire > 0)
-                    .assign_coords(
-                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                            "datetime64[ns]"
-                        )
-                    )
-                    .groupby("day")
-                    .sum(dim="time_index")
-                )
-                measurement_values_per_day: xr.DataArray = (
-                    (center_pixel_sample.total_offire > 0)
-                    .assign_coords(
-                        day=center_pixel_sample.time.astype("datetime64[D]").astype(
-                            "datetime64[ns]"
-                        )
-                    )
-                    .groupby("day")
-                    .sum(dim="time_index")
-                    .shift(day=-1, fill_value=0)
-                )
-            days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
-                measurement_values_per_day >= measurement_threshold
-            ).expand_dims("sample").assign_coords(sample=[sample])
+        assert (
+            center_pixel_data.time.isel(time_index=0)
+            == center_pixel_data.time.isel(time_index=0, sample=0)
+        ).all(), "Time indices are not the same for all samples"
 
-            days_with_enough_data = (
-                days_with_enough_data.rename(day="day_index")
+        center_pixel_data = center_pixel_data.assign_coords(
+            time_index=center_pixel_data.time.isel(sample=0).values
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fire_values_per_day: xr.DataArray = (
+                (center_pixel_data.total_frpfire > 0)
                 .assign_coords(
-                    day=(
-                        ("sample", "day_index"),
-                        days_with_enough_data.day.values[None, :],
+                    day=center_pixel_data.time_index.astype("datetime64[D]").astype(
+                        "datetime64[ns]"
                     )
                 )
-                .drop("day_index")
+                .groupby("day")
+                .sum(dim="time_index")
             )
-            days_with_enough_data_collection.append(days_with_enough_data)
-        days_with_enough_data = xr.concat(
-            days_with_enough_data_collection, dim="sample"
+            measurement_values_per_day: xr.DataArray = (
+                (center_pixel_data.total_offire > 0)
+                .assign_coords(
+                    day=center_pixel_data.time_index.astype("datetime64[D]").astype(
+                        "datetime64[ns]"
+                    )
+                )
+                .groupby("day")
+                .sum(dim="time_index")
+                .shift(day=-1, fill_value=0)
+            )
+        days_with_enough_data = (fire_values_per_day >= fire_threshold) & (
+            measurement_values_per_day >= measurement_threshold
+        )
+
+        days_with_enough_data = (
+            days_with_enough_data.rename(day="day_index")
+            .assign_coords(
+                day=(
+                    ("sample", "day_index"),
+                    np.repeat(
+                        days_with_enough_data.day.values[None, :],
+                        len(days_with_enough_data.sample),
+                        axis=0,
+                    ),
+                )
+            )
+            .drop("day_index")
         ).transpose("sample", "day_index")
         return days_with_enough_data.compute()
 
@@ -498,32 +510,10 @@ class DataCutter:
         Returns:
             xr.DataArray: The sample coordinates.
         """
-        sliced_selection = days_with_enough_data.day.where(
-            days_with_enough_data, drop=True
+
+        new_sample_time_coordinates = (
+            np.nonzero(days_with_enough_data.values) * np.array([1, 24])[..., None]
         )
-        new_sample_time_coordinates = []
-        for sample in sliced_selection.sample.values:
-            for day_index in sliced_selection.day_index.values:
-                if pd.isnull(
-                    sliced_selection.sel(sample=sample, day_index=day_index).item()
-                ):
-                    continue
-                time_of_day = sliced_selection.sel(
-                    sample=sample, day_index=day_index
-                ).values
-                sample_data = self.data.sel(sample=sample)
-                try:
-                    time_index_of_day = (
-                        sample_data.time_index.where(
-                            (sample_data.time == time_of_day).compute(), drop=True
-                        )
-                        .compute()
-                        .item()
-                    )
-                except ValueError:
-                    continue
-                new_sample_time_coordinates.append((sample, time_index_of_day))
-        new_sample_time_coordinates = np.array(new_sample_time_coordinates).T
 
         sample_coordinates = xr.Dataset(
             data_vars=dict(
