@@ -70,7 +70,7 @@ options:
   --i I [I ...], -InputPathList I [I ...]
                         Enter filepaths to inputdata (.nc fomat), needs at least a GFAS dataset with frpfire and offire variable
 ```
-The resulting timeseries can be used for the classical approches in `fire_forecast.evaluation`.
+The resulting timeseries can be used for analysing longer timeseries than the two day snippets that are used in the training of the models.
 #### 1.3 Cutting timeseries into 2 day samples for the deep learning models
 The goal of our models is to predict the fire radiative power of a full day, based on the fire of the previous day, its rate of measurement and meteorological data of the full 2 days. To split the long timeseries into 2 day samples, we use the `fire_forecast.data_preparation.cut_data` script. The script takes a netcdf file with the fire timeseries and the meteorological data and splits it into 2 day samples. Additionally it splits the data into train, test and validation sets. The usage is as follows:
 ```
@@ -169,7 +169,7 @@ model = ResidualNetwork(...)
 #### 2.3 Loading a dataset
 To load a dataset the `FireDataset` class of `fire_forecast.deep_learning.firedataset` can be used. 
 It is recommended to use the `only_center=True` option, which will only load the center pixel of the 3x3 grid of the timeseries. This is the default option. An item of the `FireDataset` consists of 3 parts:
- * `fire_features`: 24 hourly fire radiative power of the previous day and the rate of measurement of the current day
+ * `fire_features`: 24 hourly fire radiative power of the previous day and the rate of measurement of the previous day
  * `meteo_features`: 24 hourly meteorological data of the previous day and the current day 
  * `labels`: 24 hourly fire radiative power of the current day and the rate of measurement of the current day
 
