@@ -96,7 +96,10 @@ X_test: np.array = features
 # The test targets with shape (n_samples, n_targets)
 y_test: np.array = target_values
 # The predictions of other models as a dictionary of model name to y_pred with shape (n_samples, n_targets)
-predictions: dict = {"NN": predictions}
+predictions: dict = {
+    "NN": predictions,
+    "Persistence": fire_features,
+}
 # The weights of the labels as np.array with shape (n_samples, n_targets)
 weights_test: np.array = weights
 
@@ -105,7 +108,7 @@ metrics = evaluation.evaluate_models(
     X=X_test,
     y=y_test,
     predictions=predictions,
-    weights=weights_test
+    weights=weights_test,
 )
 
 metrics.head()
