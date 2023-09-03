@@ -206,6 +206,7 @@ To predict with multiple models, you can use the `Ensemble` class of `fire_forec
 ```python
 from fire_forecast.deep_learning.ensemble import Ensemble
 from fire_forecast.deep_learning.fire_dataset import FireDataset
+from fire_forecast.deep_learning.utils import read_config
 
 configlist = [
     "path/to/config1.yaml",
