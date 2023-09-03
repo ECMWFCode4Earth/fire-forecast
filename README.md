@@ -207,12 +207,13 @@ To predict with multiple models, you can use the `Ensemble` class of `fire_forec
 from fire_forecast.deep_learning.ensemble import Ensemble
 from fire_forecast.deep_learning.fire_dataset import FireDataset
 
-configs = [
+configlist = [
     "path/to/config1.yaml",
     "path/to/config2.yaml",
     "path/to/config3.yaml",
 ]
-ensemble = Ensemble(configs) #Load the ensemble of models
+configs = [read_config(config)["model"] for config in configlist]
+ensemble = Ensemble(*configs) #Load the ensemble of models
 dataset = FireDataset("path/to/dataset.hdf", only_center=True) #Load the dataset
 
 fire_features, meteo_features, labels = dataset[0] #Get the first item of the dataset
