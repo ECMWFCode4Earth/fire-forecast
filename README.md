@@ -51,6 +51,8 @@ In the following we will give a short overview of the different parts and how to
 
 All scripts can be called with python -m fire_forecast.module_name.script_name -h to get a help message.
 
+An example script to test and evaluate already trained NN (config and checkpoint file exist) and to compare it against classic models is provided with EvaluateModels.py.
+
 ### 1. Data preparation
 #### 1.1 Downloading data
 A script to retrieve data can be found here: `fire_forecast/data_retrieval/retrieve_meteo_fire.sh`
