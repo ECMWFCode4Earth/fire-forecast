@@ -36,4 +36,4 @@ class Ensemble:
                 flatten_features(fire_features, meteo_features)
             ).to(model.parameters().__next__().device)
             predictions.append(model(features).to("cpu"))
-        return np.mean(predictions, axis=0), np.std(predictions, axis=0)
+        return np.mean(predictions.detach().numpy(), axis=0), np.std(predictions.detach().numpy(), axis=0)
