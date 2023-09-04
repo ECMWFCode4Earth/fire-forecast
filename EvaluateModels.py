@@ -99,7 +99,7 @@ metrics = evaluation.evaluate_models(
 print(metrics.head())
 
 # plot example figures
-if True:
+if args.Plot_TimeSeries is not None:
     y_pred = evaluation.predict(models, X_test)
 
     # plot predictions of classic models, NN and persistence
