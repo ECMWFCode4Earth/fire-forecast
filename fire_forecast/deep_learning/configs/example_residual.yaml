@@ -3,7 +3,7 @@ training:
     learning_rate_development:
         type: exponential # or exponential (decrease by factor every time)
         amount: 0.99 # if linear, decrease by this amount every time if exponential, decrease by this factor every time
-    batch_size: 128
+    batch_size: 512
     epochs: 2
     optimizer_name: Adam
     optimizer_args: {} # will take learning rate from above
@@ -16,9 +16,9 @@ output:
     checkpoint_interval: 1 # save a checkpoint every 15 epochs
 
 data:
-    train_path: /data/deep_learning_data/GFAS_all_data/no_shift/train.hdf
-    test_path: /data/deep_learning_data/GFAS_all_data/no_shift/test.hdf
-    validation_path: /data/deep_learning_data/GFAS_all_data/no_shift/validation.hdf
+    train_path: /data/deep_learning_data/GFAS_all_data/no_shift_reduced3/train.hdf
+    test_path: /data/deep_learning_data/GFAS_all_data/no_shift_reduced3/test.hdf
+    validation_path: /data/deep_learning_data/GFAS_all_data/no_shift_reduced3/validation.hdf
     variables: null # is filled automatically by the iterator
 ############################################
 model:
@@ -26,7 +26,7 @@ model:
     model_args: 
         ############################################
         # Fill in the fitting size for your data
-        input_size: 128
+        input_size: 144
         ############################################
         output_size: 24 # number of output variables (usually 24)
         hidden_layer_sizes: [128, 256, [256, 256]] # list of hidden layer sizes, if you want to use residual connections, use a list of lists
