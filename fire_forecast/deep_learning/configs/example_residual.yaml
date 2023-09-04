@@ -7,7 +7,7 @@ training:
     epochs: 2
     optimizer_name: Adam
     optimizer_args: {} # will take learning rate from above
-    loss_function: WeightedL1RootLoss    
+    loss_function: WeightedL1Loss    
 
 ############################################
 # Fill in the following values
