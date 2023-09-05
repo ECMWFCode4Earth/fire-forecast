@@ -345,7 +345,8 @@ In this section you will find a full example for the usage of the tools, startin
  * Meteo data is available (for example in the files `~/data/raw/meteo_data1.nc` and `~/data/raw/meteo_data2.nc`)
 The follwing steps are not all mandatory (e.g. w.r.t. file/folder names) but are meant as a starting point with adjusted file names for your situation
 ### 1. Select pixels
-In our expamle we first need to select the pixels with fire at any point. In our example this would work like this:
+In our example we first need to select the pixels with fire at any point. In our example this would work like this:
+
 First create a directory for the output:
 ```
 mkdir ~/data/timeseries
@@ -359,7 +360,7 @@ This will concatenate the given data and select the interesting coordinates. The
  * `~/data/timeseries/TimeSeriesDataSampleCoords.nc` which contains only the coordinates of the selected pixels
 
 ### 2. Cut timeseries into 2 day samples
-Now we need to cut these into training samples, namely select 48 hour sinppets with at least a certein amount of fire occurrences. Additionally we need to separate into train, test and validation sets. In our example we want as much data as possible for training, but there should be at least one fire recorded in the 48 hour window. Finally we not only want the data from 0 to 0 UTC but also all possible shifted timeseries to maximize our data. Note that the full data has to fit into the memory for this step.
+Now we need to cut these into training samples, namely select 48 hour snippets with at least a certain amount of fire occurrences. Additionally we need to separate into train, test and validation sets. In our example we want as much data as possible for training, but there should be at least one fire recorded in the 48 hour window. Finally we not only want the data from 0 to 0 UTC but also all possible shifted timeseries to maximize our data. Note that the full data has to fit into the memory for this step.
 First create a directory for the output:
 ```
 mkdir ~/data/timeseries_snippets
@@ -381,10 +382,10 @@ TimeSeriesDataSnippets_validation_0.nc
 ...
 TimeSeriesDataSnippets_validation_23.nc
 ```
-These contain train test and validation for all 24 hourly shifts. It is ensured, there are unique timeseries reserved for each category such that one will not have two snippets from the same timeseries in train and test for example.
+These contain train, test, and validation for all 24 hourly shifts. It is ensured, that there are unique timeseries reserved for each category such that one will not have two snippets from the same timeseries in train and test for example.
 
 ### 3. Convert to h5 format for training
-While the netCDF format is great to hold additional information about position and time of the fires, these are not needed in the training, such that we strip all information and convert it to the `h5` for a more machine learning friendly format. Additionally one can now filter the snippets additionally by applying threshold for the number of recorded fires on the first or second day (however not the intensity). In this test case we apply the condition that there is at least one non-zero fire value on the first and the second day (default). The categories can be separated by the `filename_start` argument. Additionally one has to specifiy the meteo variables to include. in our case we choose the "Skin temperature" (skt) and the "Volumetric soil water layer 1" (swvl1).
+While the netCDF format is great to hold additional information about position and time of the fires, these are not needed in the training, such that we strip all information and convert it to `h5` files for a more machine learning friendly format. Additionally one can now filter the snippets additionally by applying threshold for the number of recorded fires on the first or second day (however no filtering by intensity is possible at the moment). In this test case we apply the condition that there is at least one non-zero fire value on the first and the second day (default). The categories can be separated by the `filename_start` argument. Additionally one has to specifiy the meteo variables to include. in our case we choose the "Skin temperature" (skt) and the "Volumetric soil water layer 1" (swvl1).
 
 First create a directory for the output:
 ```
@@ -404,7 +405,8 @@ The files for all shifts will be collected and saved to one file for the trainin
  * `validation.hdf`
 
 ### 4. Train a model
-The data is now ready for the training of a model. The model as well as the parameters for the training process are specified via a configuration file in the `yaml` format which is human and machine readable. An example is found in the directory `~/software/fire-forecast/fire_forecast/deep_learning/configs/example_residual.yaml`. We will build upon this for our training.
+The data is now ready for the training of a model. The model as well as the parameters for the training process are specified via a configuration file in the `yaml` format which is human and machine readable. An example given here: `~/software/fire-forecast/fire_forecast/deep_learning/configs/example_residual.yaml`. We will build upon this for our training.
+
 Again create a directory for the training output, namely the model checkpoints, the validation loss and the config. To configure the run we will copy the example config and adjust it to our needs:
 ```
 mkdir ~/data/run0
@@ -423,6 +425,7 @@ data:
     variables: null # is filled automatically by the iterator
 ```
 If a larger number of meteo variables is used also adjust the input size of the model (not needed in this example). 
+
 Now we can start the training with:
 ```
 python -m fire_forecast.deep_learning.train ~/data/run0/original_config.yaml
@@ -433,10 +436,11 @@ The result is a folder `~/data/run0` with the following content:
  * `checkpoint_0.pt`: First checkpoint of the model
  * `checkpoint_1.pt`: Second checkpoint of the model
  * `validation_loss.txt`: A file containing the validation loss for each epoch. This can be used to determine the best checkpoint for the model. (loaded with `pd.read_csv("validation_loss.txt")`)
+
 To now use a trained model fill in the `checkpoint_path` argument of the `model` part of the config file `~/data/run0/config.yaml`.
 
 ### 5. Evaluate the model
-Finally with the config file and the desired checkpoint you can use the script `~/software/fire-forecast/EvaluateModels.py` to test the model against persistance and other classical methods:
+Finally with the config file and the desired checkpoint selected you can use the script `~/software/fire-forecast/EvaluateModels.py` to test the model against persistance and other classical methods:
 ```
 python ~/software/fire-forecast/EvaluateModels.py ~/data/run0/config.yaml -Plot_TimeSeries 0 -savepath ~/data/run0/
 ```
