@@ -432,7 +432,7 @@ data:
     variables: null # is filled automatically by the iterator
 ```
 If a larger number of meteo variables is used also adjust the input size of the model (not needed in this example). 
- * If `only_center` is `true` in the config: `input_size = 48 * (number_of_meteo_variables + 1)`
+ * If `only_center` is `true` in the config: `input_size = 48 * (number_of_meteo_variables + 1)` (in our case `number_of_meteo_variables = 2`-> `input_size = 48 * 3 = 144`)
  * If `only_center` is `false` in the config: `input_size = 9 * 24 * (number_of_meteo_variables + 1)`
 
 Now we can start the training with:
