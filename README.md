@@ -74,11 +74,13 @@ options:
 ```
 The resulting timeseries can be used for analysing longer timeseries than the two day snippets that are used in the training of the models.
 #### 1.3 Cutting timeseries into 2 day samples for the deep learning models
-The goal of our models is to predict the fire radiative power of a full day, based on the fire of the previous day, its rate of measurement and meteorological data of the full 2 days. To split the long timeseries into 2 day samples, we use the `fire_forecast.data_preparation.cut_data` script. The script takes a netcdf file with the fire timeseries and the meteorological data and splits it into 2 day samples. Additionally it splits the data into train, test and validation sets. The usage is as follows:
+The goal of our models is to predict the fire radiative power of a full day, based on the fire of the previous day, its rate of measurement and meteorological data of the full 2 days. To split the long timeseries into 2 day samples, we use the `fire_forecast.data_preparation.cut_data_all_samples` script. The script takes a netcdf file with the fire timeseries and the meteorological data and splits it into 2 day samples. Additionally it splits the data into train, test and validation sets. The usage is as follows:
 ```
-usage: cut_data.py [-h] [--output_path OUTPUT_PATH] [--fire_number_threshold FIRE_NUMBER_THRESHOLD] [--measurement_threshold MEASUREMENT_THRESHOLD] data_paths [data_paths ...]
+usage: cut_data_all_shifts.py [-h] [--output_path OUTPUT_PATH] [--fire_number_threshold FIRE_NUMBER_THRESHOLD] [--measurement_threshold MEASUREMENT_THRESHOLD] [--validation_split VALIDATION_SPLIT]
+                              [--test_split TEST_SPLIT]
+                              data_paths [data_paths ...]
 
-Script to select data from dataset.
+Script to select 48 hour snippets from long timeseries. Additionally, snippets are produced with 23 houly shifts for all possible 48 hour snippets.
 
 positional arguments:
   data_paths            Paths of data to read.
@@ -88,38 +90,43 @@ options:
   --output_path OUTPUT_PATH
                         Path to output dataset.
   --fire_number_threshold FIRE_NUMBER_THRESHOLD
-                        Fire threshold.
+                        Threshold value for number of fires in the 48 hour snippets (no threshold for intensity). Default: 1.
   --measurement_threshold MEASUREMENT_THRESHOLD
-                        Measurement threshold.
+                        Threshold value for the number of measured values in the 48 hour snippets (non-zero values in offire). Default: 1.
+  --validation_split VALIDATION_SPLIT
+                        Validation split fraction (between 0 and 1). Default: 0.
+  --test_split TEST_SPLIT
+                        Test split fraction (between 0 and 1). Default: 0.
 ```
 #### 1.4 Converting the data to h5 format
 The data is saved in netcdf format, which is not ideal for training deep learning models. Therefore we convert the data to h5 format with the `fire_forecast.data_preparation.create_training_set` script. The usage is as follows:
 ```
-usage: create_training_set.py [-h] [--filename_start FILENAME_START] [--filter_nans FILTER_NANS] [--fire_number_threshold_first_day FIRE_NUMBER_THRESHOLD_FIRST_DAY] [--measurement_threshold_first_day MEASUREMENT_THRESHOLD_FIRST_DAY]
-                              [--fire_number_threshold_second_day FIRE_NUMBER_THRESHOLD_SECOND_DAY] [--measurement_threshold_second_day MEASUREMENT_THRESHOLD_SECOND_DAY]
+usage: create_training_set.py [-h] [--filename_start FILENAME_START] [--filter_nans FILTER_NANS] [--fire_number_threshold_first_day FIRE_NUMBER_THRESHOLD_FIRST_DAY]
+                              [--measurement_threshold_first_day MEASUREMENT_THRESHOLD_FIRST_DAY] [--fire_number_threshold_second_day FIRE_NUMBER_THRESHOLD_SECOND_DAY]
+                              [--measurement_threshold_second_day MEASUREMENT_THRESHOLD_SECOND_DAY]
                               input_path output_file meteo_variables [meteo_variables ...]
 
-Create a training set from the postprocessed data.
+Create a training set in h5 format from the postprocessed data snippets in netCDF format. Additional filtering can be applied to the data.
 
 positional arguments:
-  input_path            Path to the postprocessed data file or directory of files thatare concatenated.
+  input_path            Path to the postprocessed data file or directory of files thatare to be concatenated.
   output_file           Path to the output file.
   meteo_variables       List of meteo variables to include in the training set.
 
 options:
   -h, --help            show this help message and exit
   --filename_start FILENAME_START
-                        File name start.
+                        File name start of all files to choose from the input directory.
   --filter_nans FILTER_NANS
-                        Filter out nan values.
+                        Whether to filter out nan values. Default: True.
   --fire_number_threshold_first_day FIRE_NUMBER_THRESHOLD_FIRST_DAY
-                        Data with less fire occurencies on the first day are filtered out.
+                        Data with less fire occurencies (non-zero values in frpfire) on the first day are filtered out. Default: 1.
   --measurement_threshold_first_day MEASUREMENT_THRESHOLD_FIRST_DAY
-                        Data with less measurements on the first day are filtered out.
+                        Data with less measurements (non-zero values in offire) on the first day are filtered out. Default: 1.
   --fire_number_threshold_second_day FIRE_NUMBER_THRESHOLD_SECOND_DAY
-                        Data with less fire occurencies on the second day are filtered out.
+                        Data with less fire occurencies (non-zero values in frpfire) on the second day are filtered out. Default: 1.
   --measurement_threshold_second_day MEASUREMENT_THRESHOLD_SECOND_DAY
-                        Data with less measurements on the second day are filtered out.
+                        Data with less measurements (non-zero values in offire) on the second day are filtered out. Default: 1.
 ```
 
 ### 2. Deep learning
@@ -425,6 +432,8 @@ data:
     variables: null # is filled automatically by the iterator
 ```
 If a larger number of meteo variables is used also adjust the input size of the model (not needed in this example). 
+ * If `only_center` is `true` in the config: `input_size = 48 * (number_of_meteo_variables + 1)`
+ * If `only_center` is `false` in the config: `input_size = 9 * 24 * (number_of_meteo_variables + 1)`
 
 Now we can start the training with:
 ```

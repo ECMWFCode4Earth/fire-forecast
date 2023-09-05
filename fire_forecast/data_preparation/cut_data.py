@@ -7,17 +7,27 @@ from fire_forecast.data_preparation.data_selector import DataCutter
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="Script to select data from dataset.")
+    parser = argparse.ArgumentParser(
+        description="Script to select 48 hour snippets from long timeseries."
+    )
     # argument to for n filenames:
     parser.add_argument(
         "data_paths", type=str, nargs="+", help="Paths of data to read."
     )
     parser.add_argument("--output_path", type=str, help="Path to output dataset.")
     parser.add_argument(
-        "--fire_number_threshold", type=int, default=1, help="Fire threshold."
+        "--fire_number_threshold",
+        type=int,
+        default=1,
+        help="Threshold value for number of fires in the 48 hour snippets (no threshold "
+        "for intensity). Default: 1.",
     )
     parser.add_argument(
-        "--measurement_threshold", type=int, default=1, help="Measurement threshold."
+        "--measurement_threshold",
+        type=int,
+        default=1,
+        help="Threshold value for the number of measured values in the 48 hour snippets "
+        "(non-zero values in offire). Default: 1.",
     )
     return parser.parse_args()
 
