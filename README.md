@@ -428,9 +428,15 @@ Now we can start the training with:
 python -m fire_forecast.deep_learning.train ~/data/run0/original_config.yaml
 ```
 The result is a folder `~/data/run0` with the following content:
- * `config.yaml`: The config file used for the training
+ * `orignal_config.yaml`: The original config file
+ * `config.yaml`: The config file with filled in data to reproduce the run
  * `checkpoint_0.pt`: First checkpoint of the model
  * `checkpoint_1.pt`: Second checkpoint of the model
  * `validation_loss.txt`: A file containing the validation loss for each epoch. This can be used to determine the best checkpoint for the model. (loaded with `pd.read_csv("validation_loss.txt")`)
+To now use a trained model fill in the `checkpoint_path` argument of the `model` part of the config file `~/data/run0/config.yaml`.
 
-
+### 5. Evaluate the model
+Finally with the config file and the desired checkpoint you can use the script `~/software/fire-forecast/EvaluateModels.py` to test the model against persistance and other classical methods:
+```
+python ~/software/fire-forecast/EvaluateModels.py ~/data/run0/config.yaml -Plot_TimeSeries 0 -savepath ~/data/run0/
+```
