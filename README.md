@@ -341,8 +341,8 @@ metrics.head()
 ## Examples for full Workflow
 In this section you will find a full example for the usage of the tools, starting from the gridded data in netCDF format, to the training of your own models. The expected starting point is the following:
  * `fire-forecast` is installed (for example in the file `~/software/fire-forecast`)
- * data gridded data for `frpfire` and `offire` are available (for example in the file `~/data/raw/fire_data.nc`)
- * meteo data is available (for example in the files `~/data/raw/meteo_data1.nc` and `~/data/raw/meteo_data2.nc`)
+ * Gridded data for `frpfire` and `offire` are available (for example in the file `~/data/raw/fire_data.nc`)
+ * Meteo data is available (for example in the files `~/data/raw/meteo_data1.nc` and `~/data/raw/meteo_data2.nc`)
 The follwing steps are not all mandatory (e.g. w.r.t. file/folder names) but are meant as a starting point with adjusted file names for your situation
 ### 1. Select pixels
 In our expamle we first need to select the pixels with fire at any point. In our example this would work like this:
