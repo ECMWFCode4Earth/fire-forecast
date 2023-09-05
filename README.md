@@ -423,7 +423,7 @@ Now change the lines for data and output in the config to:
 ```
 output:
     path: /data/run0 # where to save the model
-    checkpoint_interval: 15 # save a checkpoint every 15 epochs
+    checkpoint_interval: 1 # save a checkpoint every epoch
 
 data:
     train_path: ~/data/timeseries_snippets_h5/train.hdf
