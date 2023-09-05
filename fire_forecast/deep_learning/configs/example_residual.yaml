@@ -13,7 +13,7 @@ training:
 # Fill in the following values
 output:
     path: /data/runs/test3 # where to save the model
-    checkpoint_interval: 1 # save a checkpoint every 15 epochs
+    checkpoint_interval: 1 # save a checkpoint every epoch
 
 data:
     train_path: /data/deep_learning_data/GFAS_all_data/no_shift_reduced3/train.hdf

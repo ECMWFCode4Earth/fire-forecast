@@ -9,13 +9,14 @@ from fire_forecast.data_preparation.training_set_generator import TrainingSetGen
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description="Create a training set from the postprocessed data."
+        description="Create a training set in h5 format from the postprocessed data "
+        "snippets in netCDF format. Additional filtering can be applied to the data."
     )
     parser.add_argument(
         "input_path",
         type=str,
         help="Path to the postprocessed data file or directory of files that"
-        "are concatenated.",
+        "are to be concatenated.",
     )
     parser.add_argument("output_file", type=str, help="Path to the output file.")
     parser.add_argument(
@@ -28,34 +29,41 @@ def get_args():
         "--filename_start",
         type=str,
         default="",
-        help="File name start.",
+        help="File name start of all files to choose from the input directory.",
     )
     parser.add_argument(
-        "--filter_nans", type=bool, default=True, help="Filter out nan values."
+        "--filter_nans",
+        type=bool,
+        default=True,
+        help="Whether to filter out nan values. Default: True.",
     )
     parser.add_argument(
         "--fire_number_threshold_first_day",
         type=int,
         default=1,
-        help="Data with less fire occurencies on the first day are filtered out.",
+        help="Data with less fire occurencies (non-zero values in frpfire) on the first "
+        "day are filtered out. Default: 1.",
     )
     parser.add_argument(
         "--measurement_threshold_first_day",
         type=int,
         default=1,
-        help="Data with less measurements on the first day are filtered out.",
+        help="Data with less measurements (non-zero values in offire) on the first day "
+        "are filtered out. Default: 1.",
     )
     parser.add_argument(
         "--fire_number_threshold_second_day",
         type=int,
         default=1,
-        help="Data with less fire occurencies on the second day are filtered out.",
+        help="Data with less fire occurencies (non-zero values in frpfire) on the second "
+        "day are filtered out. Default: 1.",
     )
     parser.add_argument(
         "--measurement_threshold_second_day",
         type=int,
         default=1,
-        help="Data with less measurements on the second day are filtered out.",
+        help="Data with less measurements (non-zero values in offire) on the second day "
+        "are filtered out. Default: 1.",
     )
     return parser.parse_args()
 
@@ -67,7 +75,6 @@ def main():
     if input_path.is_dir():
         dataset = xr.open_mfdataset(
             input_path.glob(f"{args.filename_start}*.nc"),
-            chunks=96,
             concat_dim="sample",
             combine="nested",
         ).compute()
