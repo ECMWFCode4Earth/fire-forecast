@@ -337,3 +337,100 @@ metrics = evaluation.evaluate_models(
 
 metrics.head()
 ```
+
+## Examples for full Workflow
+In this section you will find a full example for the usage of the tools, starting from the gridded data in netCDF format, to the training of your own models. The expected starting point is the following:
+ * `fire-forecast` is installed (for example in the file `~/software/fire-forecast`)
+ * data gridded data for `frpfire` and `offire` are available (for example in the file `~/data/raw/fire_data.nc`)
+ * meteo data is available (for example in the files `~/data/raw/meteo_data1.nc` and `~/data/raw/meteo_data2.nc`)
+The follwing steps are not all mandatory (e.g. w.r.t. file/folder names) but are meant as a starting point with adjusted file names for your situation
+### 1. Select pixels
+In our expamle we first need to select the pixels with fire at any point. In our example this would work like this:
+First create a directory for the output:
+```
+mkdir ~/data/timeseries
+```
+Then run the script (which takes about a few hours):
+```
+python -m fire_forecast.data_preparation.SelectFirePixels.nc ~/data/timeseries/TimeSeriesData --i ~/data/raw/fire_data.nc ~/data/raw/meteo_data1.nc ~/data/raw/meteo_data2.nc
+```
+This will concatenate the given data and select the interesting coordinates. The timeseries will contain of the 3x3 pixels surrounding the interesting pixels. As a result there will be two files:
+ * `~/data/timeseries/TimeSeriesData.nc` which contains the timeseries of the selected pixels for all given fire and meteo data
+ * `~/data/timeseries/TimeSeriesDataSampleCoords.nc` which contains only the coordinates of the selected pixels
+
+### 2. Cut timeseries into 2 day samples
+Now we need to cut these into training samples, namely select 48 hour sinppets with at least a certein amount of fire occurrences. Additionally we need to separate into train, test and validation sets. In our example we want as much data as possible for training, but there should be at least one fire recorded in the 48 hour window. Finally we not only want the data from 0 to 0 UTC but also all possible shifted timeseries to maximize our data. Note that the full data has to fit into the memory for this step.
+First create a directory for the output:
+```
+mkdir ~/data/timeseries_snippets
+```
+Then run the script (which takes about a few hours):
+```
+python -m fire_forecast.data_preparation.cut_data_all_shifts ~/data/timeseries/TimeSeriesData.nc --output_path ~/data/timeseries_snippets/TimeSeriesDataSnippets.nc --test_split 0.1 --validation_split 0.1
+```
+This will create many files in the directory `~/data/timeseries_snippets/`:
+```
+TimeSeriesDataSnippets_test_0.nc
+TimeSeriesDataSnippets_test_1.nc
+...
+TimeSeriesDataSnippets_test_23.nc
+TimeSeriesDataSnippets_train_0.nc
+...
+TimeSeriesDataSnippets_train_23.nc
+TimeSeriesDataSnippets_validation_0.nc
+...
+TimeSeriesDataSnippets_validation_23.nc
+```
+These contain train test and validation for all 24 hourly shifts. It is ensured, there are unique timeseries reserved for each category such that one will not have two snippets from the same timeseries in train and test for example.
+
+### 3. Convert to h5 format for training
+While the netCDF format is great to hold additional information about position and time of the fires, these are not needed in the training, such that we strip all information and convert it to the `h5` for a more machine learning friendly format. Additionally one can now filter the snippets additionally by applying threshold for the number of recorded fires on the first or second day (however not the intensity). In this test case we apply the condition that there is at least one non-zero fire value on the first and the second day (default). The categories can be separated by the `filename_start` argument. Additionally one has to specifiy the meteo variables to include. in our case we choose the "Skin temperature" (skt) and the "Volumetric soil water layer 1" (swvl1).
+
+First create a directory for the output:
+```
+mkdir ~/data/timeseries_snippets_h5
+```
+Then run the scripts:
+```
+python -m fire_forecast.data_preparation.create_training_set ~/data/timeseries_snippets ~/data/timeseries_snippets_h5/train.hdf skt swvl1 --filename_start TimeSeriesDataSnippets_train
+
+python -m fire_forecast.data_preparation.create_training_set ~/data/timeseries_snippets ~/data/timeseries_snippets_h5/test.hdf skt swvl1 --filename_start TimeSeriesDataSnippets_test
+
+python -m fire_forecast.data_preparation.create_training_set ~/data/timeseries_snippets ~/data/timeseries_snippets_h5/validation.hdf skt swvl1 --filename_start TimeSeriesDataSnippets_validation
+```
+The files for all shifts will be collected and saved to one file for the training of the models. The directory `~/data/timeseries_snippets_h5` then contains the following files:
+ * `train.hdf`
+ * `test.hdf`
+ * `validation.hdf`
+
+### 4. Train a model
+The data is now ready for the training of a model. The model as well as the parameters for the training process are specified via a configuration file in the `yaml` format which is human and machine readable. An example is found in the directory `~/software/fire-forecast/fire_forecast/deep_learning/configs/example_residual.yaml`. We will build upon this for our training.
+Again create a directory for the training output, namely the model checkpoints, the validation loss and the config. To configure the run we will copy the example config and adjust it to our needs:
+```
+mkdir ~/data/run0
+cp ~/software/fire-forecast/fire_forecast/deep_learning/configs/example_residual.yaml ~/data/run0/original_config.yaml
+```
+Now change the lines for data and output in the config to:
+```
+output:
+    path: /data/run0 # where to save the model
+    checkpoint_interval: 1 # save a checkpoint every 15 epochs
+
+data:
+    train_path: ~/data/timeseries_snippets_h5/train.hdf
+    test_path: ~/data/timeseries_snippets_h5/test.hdf
+    validation_path: ~/data/timeseries_snippets_h5/validation.hdf
+    variables: null # is filled automatically by the iterator
+```
+If a larger number of meteo variables is used also adjust the input size of the model (not needed in this example). 
+Now we can start the training with:
+```
+python -m fire_forecast.deep_learning.train ~/data/run0/original_config.yaml
+```
+The result is a folder `~/data/run0` with the following content:
+ * `config.yaml`: The config file used for the training
+ * `checkpoint_0.pt`: First checkpoint of the model
+ * `checkpoint_1.pt`: Second checkpoint of the model
+ * `validation_loss.txt`: A file containing the validation loss for each epoch. This can be used to determine the best checkpoint for the model. (loaded with `pd.read_csv("validation_loss.txt")`)
+
+

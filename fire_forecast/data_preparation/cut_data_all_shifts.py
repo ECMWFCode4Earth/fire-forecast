@@ -30,9 +30,7 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
     output_path = Path(args.output_path)
-    full_dataset = xr.open_mfdataset(
-        args.data_paths, chunks={"sample": 15014}
-    )  # .compute()
+    full_dataset = xr.open_mfdataset(args.data_paths).compute()
 
     full_dataset["total_frpfire"] = full_dataset.frpfire
     full_dataset["total_offire"] = full_dataset.offire
