@@ -282,7 +282,7 @@ This function compares the predictions of the given models to the true values. I
 - `predictions`: A dictionary containing the predictions.
 - `weights`: An array-like object containing the weights for each sample.
 
-#### 3.2 Example
+#### 3.2 Example (see `~/software/fire-forecast/EvaluateModels.py` for a working example)
 
 ```python
 from fire_forecast.deep_learning import Iterator
