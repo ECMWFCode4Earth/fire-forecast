@@ -353,7 +353,7 @@ mkdir ~/data/timeseries
 ```
 Then run the script (which takes about a few hours):
 ```
-python -m fire_forecast.data_preparation.SelectFirePixels.nc ~/data/timeseries/TimeSeriesData --i ~/data/raw/fire_data.nc ~/data/raw/meteo_data1.nc ~/data/raw/meteo_data2.nc
+python -m fire_forecast.data_preparation.SelectFirePixels.nc ~/data/timeseries/TimeSeriesData.nc --i ~/data/raw/fire_data.nc ~/data/raw/meteo_data1.nc ~/data/raw/meteo_data2.nc
 ```
 This will concatenate the given data and select the interesting coordinates. The timeseries will contain of the 3x3 pixels surrounding the interesting pixels. As a result there will be two files:
  * `~/data/timeseries/TimeSeriesData.nc` which contains the timeseries of the selected pixels for all given fire and meteo data
@@ -416,7 +416,7 @@ Now change the lines for data and output in the config to:
 ```
 output:
     path: /data/run0 # where to save the model
-    checkpoint_interval: 1 # save a checkpoint every 15 epochs
+    checkpoint_interval: 15 # save a checkpoint every 15 epochs
 
 data:
     train_path: ~/data/timeseries_snippets_h5/train.hdf
