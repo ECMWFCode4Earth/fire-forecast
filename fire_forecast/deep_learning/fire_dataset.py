@@ -54,14 +54,17 @@ class FireDataset(Dataset):
             Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: A tuple containing
                 the fire features, meteo features, labels and data variables."""
         with h5py.File(self._data_path, "r") as file:
-            data = file["training_set"][:]
+            if self.only_center:
+                data = file["training_set"][:, :, :, 1:2, 1:2]
+            else:
+                data = file["training_set"][:]
             data_variables = file["variable_selection"][:]
-        if self.only_center:
-            fire_features = data[:, 0:2, :24, 1:2, 1:2]
-            meteo_features = data[:, 2:, :, 1:2, 1:2]
-        else:
-            fire_features = data[:, 0:2, :24, :, :]
-            meteo_features = data[:, 2:, :, :, :]
 
-        labels = data[:, 0:2, 24:, 1, 1]
+        fire_features = data[:, 0:2, :24, :, :]
+        meteo_features = data[:, 2:, :, :, :]
+
+        if self.only_center:
+            labels = data[:, 0:2, 24:, 0, 0]
+        else:
+            labels = data[:, 0:2, 24:, 1, 1]
         return fire_features, meteo_features, labels, data_variables

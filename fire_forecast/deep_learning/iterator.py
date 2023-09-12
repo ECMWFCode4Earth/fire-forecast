@@ -12,7 +12,7 @@ from tqdm.auto import tqdm
 
 from fire_forecast.deep_learning.fire_dataset import FireDataset
 from fire_forecast.deep_learning.losses import load_loss_by_name
-from fire_forecast.deep_learning.models import load_model_from_config
+from fire_forecast.deep_learning.models import AttentionLayer, load_model_from_config
 from fire_forecast.deep_learning.utils import (
     flatten_features,
     flatten_labels_and_weights,
@@ -35,6 +35,11 @@ class Iterator:
         self._initialize_feature_normalization()
         self.model = load_model_from_config(self._config["model"])
         self._learning_rate = self._config["training"]["learning_rate"]
+        self._clipping_value = (
+            self._config["training"]["clipping_value"]
+            if "clipping_value" in self._config["training"]
+            else None
+        )
         self._optimizer = self._get_optimizer_from_config(self._config["training"])
         self.train_dataloader = DataLoader(
             self.train_dataset,
@@ -98,6 +103,10 @@ class Iterator:
         target_values = target_values.to(self.device)
         weights = weights.to(self.device)
         loss = self.criterion(predictions, target_values, weights)
+        if self._clipping_value is not None:
+            torch.nn.utils.clip_grad_norm_(
+                self.model.parameters(), self._clipping_value
+            )
         loss.backward()
         self._optimizer.step()
         self._optimizer.zero_grad()
@@ -230,6 +239,8 @@ class Iterator:
             self._config["model"]["model_args"]["activation"] = "ReLU"
         elif self._config["model"]["model_args"]["activation"] == nn.LeakyReLU:
             self._config["model"]["model_args"]["activation"] = "LeakyReLU"
+        elif self._config["model"]["model_args"]["activation"] == AttentionLayer:
+            self._config["model"]["model_args"]["activation"] = "MultiheadAttention"
 
         with open(self._output_path / "config.yaml", "w") as file:
             yaml.dump(self._config, file, default_flow_style=False, explicit_start=True)

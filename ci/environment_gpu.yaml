@@ -8,6 +8,4 @@ dependencies:
   - netcdf4
   - poetry
   - pytorch::pytorch
-  - pytorch::torchvision
-  - pytorch::torchaudio
   - pytorch::pytorch-cuda=11.7
