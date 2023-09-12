@@ -77,7 +77,8 @@ def main():
             input_path.glob(f"{args.filename_start}*.nc"),
             concat_dim="sample",
             combine="nested",
-        ).compute()
+            chunks="auto",
+        )  # .compute()
     elif input_path.is_file():
         dataset = xr.open_dataset(input_path)
     else:
