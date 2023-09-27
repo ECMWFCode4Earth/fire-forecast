@@ -19,7 +19,7 @@ for year in {2020..2023}; do
     if [ $year != 2023 ]; then
 	dayX=${year}1031
     else
-	dayX=${year}0731
+	dayX=${year}0831
     fi # year
     # only for testing:
     #dayX=${year}0502
@@ -60,7 +60,7 @@ grid=0.5/0.5,
 target="meteo_${levtype}_0p5_${day1}_${dayX}.grib"
 EOF
 
-    $GRIB2NC_CMD -D NC_FLOAT -o meteo_${levtype}_0p5_${day1}_${dayX}.nc -k 4 -d 6 meteo_${levtype}_0p5_${day1}_${dayX}.grib
+        $GRIB2NC_CMD -D NC_FLOAT -o meteo_${levtype}_0p5_${day1}_${dayX}.nc -k 4 -d 6 meteo_${levtype}_0p5_${day1}_${dayX}.grib
 
     done # levtype
 
@@ -79,7 +79,7 @@ levtype=sfc,
 param=$param,
 step=0-1,
 stream=gfas,
-time=00:00:00/01:00:00/02:00:00/03:00:00/04:00:00/05:00:00/06:00:00/07:00:00/08:00:00/09:00:00/10:00:00/11:00:00/12:00:00/13:00:00/14:00:00/15:00:00/16:00:00/17:00:00/18:00:00/19:00:00/20:00:00/21:00:00/22:00:00/23:00:00,
+time=0/to/23,
 type=ga,
 target="fire_gfas_0p5_${day1}_${dayX}.grib",
 interpolation="--interpolation=grid-box-average",
