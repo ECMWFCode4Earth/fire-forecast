@@ -360,7 +360,7 @@ mkdir ~/data/timeseries
 ```
 Then run the script (which takes about a few hours):
 ```
-python -m fire_forecast.data_preparation.SelectFirePixels.nc ~/data/timeseries/TimeSeriesData.nc --i ~/data/raw/fire_data.nc ~/data/raw/meteo_data1.nc ~/data/raw/meteo_data2.nc
+python -m fire_forecast.data_preparation.SelectFirePixels_FRP ~/data/timeseries/TimeSeriesData.nc --i ~/data/raw/fire_data.nc ~/data/raw/meteo_data1.nc ~/data/raw/meteo_data2.nc
 ```
 This will concatenate the given data and select the interesting coordinates. The timeseries will contain of the 3x3 pixels surrounding the interesting pixels. As a result there will be two files:
  * `~/data/timeseries/TimeSeriesData.nc` which contains the timeseries of the selected pixels for all given fire and meteo data
