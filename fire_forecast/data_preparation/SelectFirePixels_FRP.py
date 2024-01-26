@@ -52,7 +52,7 @@ if os.path.isfile(outputpath.split(".")[0] + "SampleCoords.nc"):
         outputpath.split(".")[0] + "SampleCoords.nc"
     )
 else:
-    DS = xr.open_mfdataset(pathlist, chunks={"latitude": 4, "longitude": 36})
+    DS = xr.open_mfdataset(pathlist, chunks={"latitude": "auto", "longitude": "auto"})
 
     # select data with at least one measured fire of one of the satellites
     DS = DS.assign(total_frpfire=DS.frpfire)
@@ -123,7 +123,7 @@ else:
     sample_coordinates_dataset.to_netcdf(outputpath.split(".")[0] + "SampleCoords.nc")
     del DS
 
-DS = xr.open_mfdataset(pathlist, chunks={"latitude": 4, "longitude": 36})
+DS = xr.open_mfdataset(pathlist, chunks={"latitude": "auto", "longitude": "auto"})
 
 print("filter data")
 filtered_data = DS.sel(
